@@ -1,0 +1,11 @@
+{
+  "name": "presidentielles-sondages",
+  "private": true,
+  "description": "Application web des sondages des présidentielles 2017, 2022, 2027, alimentée par un Google Sheet",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "start": "python3 -m http.server 8000",
+    "extraire": "node scripts/extraire-page-originale.mjs"
+  }
+}

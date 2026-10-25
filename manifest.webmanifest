@@ -1,0 +1,16 @@
+{
+  "name": "Présidentielles : sondages, Assemblée, sondeurs et médias",
+  "short_name": "Présidentielles",
+  "description": "Sondages des présidentielles 2017, 2022 et 2027, mis à jour automatiquement.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F2F4F7",
+  "theme_color": "#23408E",
+  "icons": [
+    { "src": "assets/icone.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "assets/icone-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
