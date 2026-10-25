@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Sondages des présidentielles 2017, 2022 et 2027, Assemblée nationale, instituts de sondage et médias. Données mises à jour automatiquement.">
+<meta name="theme-color" content="#23408E">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/icone.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/icone-192.png">
+<title>Présidentielles 2017, 2022, 2027 : sondages, Assemblée, sondeurs et médias</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600&family=Schibsted+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.0.1/chartjs-plugin-zoom.min.js"></script>
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <h1 id="title">Présidentielle 2027 : sondages, sondeurs et médias</h1>
+  <div class="timewarp" role="group" aria-label="Choisir l’élection">
+    <button data-y="2017" aria-pressed="false">2017<small>Macron – Le Pen</small></button>
+    <button data-y="2022" aria-pressed="false">2022<small>Macron – Le Pen</small></button>
+    <button data-y="2027" aria-pressed="true">2027<small>en cours</small></button>
+  </div>
+  <p class="era-sub" id="eraSub"></p>
+</div></header>
+<nav class="tabs" aria-label="Sections"><div class="wrap" role="tablist">
+  <button role="tab" id="t-sondages" aria-controls="sondages" aria-selected="true">Sondages</button>
+  <button role="tab" id="t-popularite" aria-controls="popularite" aria-selected="false">Popularité</button>
+  <button role="tab" id="t-assemblee" aria-controls="assemblee" aria-selected="false">Assemblée</button>
+  <button role="tab" id="t-comparer" aria-controls="comparer" aria-selected="false">Comparer</button>
+  <button role="tab" id="t-citations" aria-controls="citations" aria-selected="false">Citations</button>
+  <button role="tab" id="t-instituts" aria-controls="instituts" aria-selected="false">Instituts</button>
+  <button role="tab" id="t-medias" aria-controls="medias" aria-selected="false">Médias</button>
+  <button role="tab" id="t-liens" aria-controls="liens" aria-selected="false">Liens médias ↔ sondeurs</button>
+</div></nav>
+
+<div class="chargement" id="chargement" role="status" aria-live="polite"><span class="roue" aria-hidden="true"></span><span id="chargementTexte">Chargement des données…</span></div>
+<main class="wrap">
+<section class="panel on" id="sondages" role="tabpanel" aria-labelledby="t-sondages">
+  <p class="note" id="pollNote"></p>
+  <div class="block">
+    <h2 id="heroTitle"></h2>
+    <p class="lede" id="heroLede"></p>
+    <div id="heroBars"></div>
+    <div class="legend-row" id="legend"></div>
+  </div>
+  <div class="block" id="ageVote"></div>
+  <div class="block">
+    <h2 id="trendTitle">L’évolution dans le temps</h2>
+    <p class="lede">Les lignes sont la moyenne glissante, les points les sondages un par un. Faites glisser le doigt (ou la souris) sur le graphique : les chiffres du jour s’affichent au-dessus. Pour zoomer : boutons de période, curseurs, ou pincement à deux doigts. Touchez un nom pour l’afficher ou le masquer.</p>
+    <div class="chips" id="chips"></div>
+    <div class="zoombar" id="zoombar"></div>
+    <div class="readout" id="readout" aria-live="polite"></div>
+    <div class="chart-box"><canvas id="trend" aria-label="Courbes des intentions de vote"></canvas></div>
+    <div class="range">
+      <label for="rFrom">Du</label><input type="range" id="rFrom" min="0" step="1">
+      <label for="rTo">Au</label><input type="range" id="rTo" min="0" step="1">
+    </div>
+    <p class="hint" id="rangeLabel"></p>
+  </div>
+  <div class="block">
+    <h2 id="confTitle"></h2>
+    <p class="lede" id="confLede"></p>
+    <div class="scroll"><table id="confront"></table></div>
+  </div>
+  <div class="block">
+    <h2 id="houseTitle"></h2>
+    <p class="lede" id="houseLede"></p>
+    <div class="scroll"><table id="house" class="heat"></table></div>
+  </div>
+  <div class="block">
+    <h2>Second tour</h2>
+    <p class="lede" id="duelLede"></p>
+    <div id="duelBox"></div>
+  </div>
+  <div class="block">
+    <details>
+      <summary>Voir tous les sondages un par un</summary>
+      <div class="scroll"><table id="allpolls"></table></div>
+    </details>
+  </div>
+</section>
+
+<section class="panel" id="popularite" role="tabpanel" aria-labelledby="t-popularite">
+  <p class="note">Chaque institut pose sa propre question (« satisfait », « bonne opinion », « confiance ») : comparez surtout les évolutions, pas les niveaux d’un institut à l’autre. La ligne épaisse est la moyenne des instituts du mois. Faites glisser le doigt sur un graphique pour lire les chiffres.</p>
+  <div id="popBlocks"></div>
+</section>
+
+<section class="panel" id="assemblee" role="tabpanel" aria-labelledby="t-assemblee">
+  <p class="note">Les 577 députés, groupe par groupe, de la gauche (à gauche de l’hémicycle) à la droite. Choisissez une date pour faire un bond dans le temps, touchez un siège pour voir son groupe, et composez une coalition pour voir si elle atteint la majorité absolue.</p>
+  <div class="block">
+    <h2>L’hémicycle</h2>
+    <div class="chips" id="anDates"></div>
+    <p class="lede" id="hemiSub"></p>
+    <svg id="hemi" class="links-svg" role="img" aria-label="Hémicycle de l’Assemblée nationale" style="max-width:620px"></svg>
+    <div class="readout" id="hemiInfo" aria-live="polite"></div>
+    <h2 style="font-size:1.1rem;margin-top:14px">Composez une coalition</h2>
+    <p class="lede">Touchez les groupes pour les additionner. Le trait noir marque la majorité absolue.</p>
+    <div class="chips" id="coalChips"></div>
+    <div id="coalBar"></div>
+  </div>
+  <div class="block">
+    <h2>Les groupes</h2>
+    <div class="scroll"><table id="anTable"></table></div>
+  </div>
+  <div class="block">
+    <h2>Quatre Assemblées comparées</h2>
+    <p class="lede">Sièges par grande famille politique, de 2017 à aujourd’hui. Faites glisser le doigt sur une ligne pour comparer les quatre dates.</p>
+    <div class="bars-box tall"><canvas id="anFam" aria-label="Sièges par famille et par date"></canvas></div>
+    <h2 style="font-size:1.1rem;margin-top:16px">Qui a gagné, qui a perdu ?</h2>
+    <p class="lede">Choisissez deux dates : la barre montre le nombre de sièges gagnés (vert) ou perdus (rouge) par chaque famille.</p>
+    <div class="grid2 updater" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px"><div><label for="anA">De</label><select id="anA"></select></div><div><label for="anB">À</label><select id="anB"></select></div></div>
+    <div class="bars-box"><canvas id="anDiff" aria-label="Évolution des sièges"></canvas></div>
+    <p class="hint">Familles regroupées pour la comparaison : la gauche radicale réunit LFI et les communistes (GDR) ; le bloc central les groupes macronistes, MoDem et Horizons ; l’extrême droite le RN (FN en 2017, alors non-inscrit) et l’UDR d’Éric Ciotti ; les Constructifs de 2017 sont classés à droite. Sources : Assemblée nationale (compositions de début de législature et tableau des effectifs au 8 octobre 2026).</p>
+  </div>
+</section>
+
+<section class="panel" id="comparer" role="tabpanel" aria-labelledby="t-comparer">
+  <p class="note">Des outils pour mettre les chiffres côte à côte. Les graphiques 2 et 3 portent sur l’élection choisie en haut de page (2017, 2022 ou 2027) ; les graphiques 1 et 4 comparent toujours les trois élections. Glissez le doigt sur les courbes pour lire les valeurs.</p>
+  <div class="block updater">
+    <h2>1. Trois campagnes au même moment</h2>
+    <p class="lede">Où en était chaque camp, à la même distance du premier tour ? L’axe horizontal compte les jours avant le vote. Les étoiles sont les résultats réels.</p>
+    <label for="cmpFam">Camp politique</label><select id="cmpFam"></select>
+    <p class="hint" id="cmp1txt" style="margin:8px 0"></p>
+    <div class="bars-box tall"><canvas id="cmp1" aria-label="Comparaison des trois campagnes"></canvas></div>
+  </div>
+  <div class="block updater">
+    <h2>2. Duel de courbes</h2>
+    <p class="lede">Choisissez deux candidats : leurs moyennes et, en gris, l’écart entre eux (échelle de droite).</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label for="cmpA">Candidat A</label><select id="cmpA"></select></div><div><label for="cmpB">Candidat B</label><select id="cmpB"></select></div></div>
+    <p class="hint" id="cmp2txt" style="margin:8px 0"></p>
+    <div class="bars-box tall"><canvas id="cmp2" aria-label="Duel de courbes"></canvas></div>
+  </div>
+  <div class="block updater">
+    <h2>3. Un institut face aux autres</h2>
+    <p class="lede">Les sondages d’un institut (points orange) comparés à ceux des autres (gris) et à la moyenne.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label for="cmpI">Institut</label><select id="cmpI"></select></div><div><label for="cmpK">Candidat</label><select id="cmpK"></select></div></div>
+    <p class="hint" id="cmp3txt" style="margin:8px 0"></p>
+    <div class="bars-box tall"><canvas id="cmp3" aria-label="Institut face à la moyenne"></canvas></div>
+  </div>
+  <div class="block">
+    <h2>4. Le président sortant dans l’opinion</h2>
+    <p class="lede">Popularité moyenne du président en place, mois par mois, dans l’année qui précède chaque élection. Le président ne se représente pas en 2017 ni en 2027, mais son impopularité pèse sur son camp.</p>
+    <div class="bars-box"><canvas id="cmp4" aria-label="Popularité des présidents"></canvas></div>
+  </div>
+</section>
+
+<section class="panel" id="citations" role="tabpanel" aria-labelledby="t-citations">
+  <p class="note">Qui parle de qui ? Les publications des journalistes et des médias qui citent les personnalités engagées ou pressenties pour 2027, par personnalité, par type de média et par chaîne ou journal.</p>
+  <div id="citBox"></div>
+</section>
+
+<section class="panel" id="instituts" role="tabpanel" aria-labelledby="t-instituts">
+  <p class="note" id="instNote"></p>
+  <h2 class="sec">Instituts privés</h2>
+  <p class="lede">Tous les sondages d’intentions de vote publiés en France sont réalisés par ces sociétés privées. Propriétaires et clients tels qu’ils étaient à l’époque de cette élection.</p>
+  <div class="cards" id="instcards"></div>
+  <h2 class="sec">Acteurs publics</h2>
+  <p class="lede">Aucun organisme public ne publie d’intentions de vote : l’État encadre les sondages (loi de 1977) mais ne les produit pas. Les acteurs publics jouent pourtant un rôle à chaque étape.</p>
+  <div class="cards public" id="pubcards"></div>
+</section>
+
+<section class="panel" id="medias" role="tabpanel" aria-labelledby="t-medias">
+  <p class="note">L’orientation indiquée est la ligne éditoriale telle qu’elle était le plus souvent décrite par les observateurs des médias à l’époque choisie, pas une étiquette officielle. Les chaînes d’info et médias généralistes ont aussi une orientation, avec la mention « discuté » quand elle fait débat. Le pluralisme à la télé et à la radio est contrôlé par une autorité publique (CSA puis Arcom depuis 2022).</p>
+  <div class="block">
+    <h2 id="medTitle">Qui possède quoi</h2>
+    <p class="lede">Nombre de médias de cette page dans chaque orientation, par type. Faites glisser le doigt sur une barre pour voir les médias.</p>
+    <div class="bars-box"><canvas id="orientChart" aria-label="Nombre de médias par orientation"></canvas></div>
+  </div>
+  <div class="block">
+    <h2>Orientation des médias de chaque propriétaire</h2>
+    <div class="bars-box tall"><canvas id="ownerChart" aria-label="Orientation des médias par propriétaire"></canvas></div>
+  </div>
+  <div class="block" id="ageMedia"></div>
+  <div class="block">
+    <h2>Le détail, média par média</h2>
+    <div class="filters" id="mfilters"></div>
+    <div class="scale" aria-hidden="true"><div>Gauche radicale</div><div>Gauche</div><div>Centre-gauche</div><div>Centre</div><div>Centre-droit</div><div>Droite</div><div>Droite conserv. / identitaire</div></div>
+    <div id="owners"></div>
+  </div>
+</section>
+
+<section class="panel" id="liens" role="tabpanel" aria-labelledby="t-liens">
+  <p class="note">À gauche, les propriétaires de médias (et quelques autres commanditaires). À droite, les instituts. Trait épais orange : le propriétaire possède l’institut. Pointillé violet : partenariat. Trait fin : ses médias commandent des sondages à cet institut. Touchez un nom pour isoler ses liens.</p>
+  <div class="block">
+    <h2 id="linkTitle">Qui commande à qui, qui possède qui</h2>
+    <div class="keyrow">
+      <span><svg viewBox="0 0 28 8"><line x1="0" y1="4" x2="28" y2="4" stroke="#C2410C" stroke-width="4"/></svg>Possède</span>
+      <span><svg viewBox="0 0 28 8"><line x1="0" y1="4" x2="28" y2="4" stroke="#7C3AED" stroke-width="2.5" stroke-dasharray="4 3"/></svg>Partenariat</span>
+      <span><svg viewBox="0 0 28 8"><line x1="0" y1="4" x2="28" y2="4" stroke="#7A8599" stroke-width="1.6"/></svg>Commande des sondages</span>
+    </div>
+    <svg id="linksvg" class="links-svg" role="img" aria-label="Liens entre propriétaires de médias et instituts"></svg>
+    <ul class="linklist" id="linklist"></ul>
+  </div>
+  <div class="block"><h2>Ce qu’il faut retenir</h2><div id="linkTake"></div></div>
+</section>
+
+<footer>
+  <p class="etat-donnees" id="etatDonnees"></p>
+  <p><strong>Sources.</strong></p>
+  <ul>
+    <li>Intentions de vote 2027 : Sondax d’après Wikipédia (CC BY-SA 4.0) et notices de la Commission des sondages. 2017 et 2022 : listes de sondages de Wikipédia (CC BY-SA 4.0). Moyennes recalculées pour cette page.</li>
+    <li>Popularité : séries mensuelles par institut compilées par EPOC Info ; baromètre Ifop-Fiducial pour Paris Match et Sud Radio pour les personnalités.</li>
+    <li>Propriétaires et commanditaires : notices de la Commission des sondages, rapports des instituts, communiqués de rachat (Ifop, OpinionWay, BVA, Toluna), comptes rendus de l’Assemblée nationale, presse.</li>
+    <li>Résultats officiels : ministère de l’Intérieur et Conseil constitutionnel.</li>
+    <li>Assemblée nationale : site de l’Assemblée (effectifs des groupes) et Wikipédia (composition au 8 octobre 2026).</li>
+    <li>Citations dans les médias : Saper Vedere, benchmark « Présidentielle 2027 » (publications de journalistes et médias sur les réseaux sociaux, données au 1er octobre 2026).</li>
+    <li>Tranches d’âge : sondages Ipsos-Sopra Steria « jour du vote » (2017, 2022), sous-échantillons des sondages 2027 compilés par sondage-presidentielle.fr, baromètre Ifop-Fiducial d’octobre 2026, Médiamétrie, Ipsos bva.</li>
+  </ul>
+</footer>
+</main>
+<script src="config.js"></script>
+<script src="assets/donnees.js"></script>
+<script src="assets/app.js"></script>
+<script src="assets/demarrage.js"></script>
+</body>
+</html>

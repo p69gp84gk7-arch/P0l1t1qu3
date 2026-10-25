@@ -1,0 +1,168 @@
+<!-- Extrait de https://fr.wikipedia.org/wiki/Liste_de_sondages_sur_l'élection_présidentielle_française_de_2027 (CC BY-SA 4.0), octobre 2026 -->
+== Sondages concernant le premier tour ==
+{{Bandeau sondage}}
+{{Encart|style=important|contenu=Ces sondages sont listés par ordre antéchronologique : '''les plus récents sont présentés en tête''' afin que les données les plus proches de l'élection soient toujours présentées en premier.}}
+
+[[Fichier:Opinion polls France 2027 by candidate.svg|centré|vignette|upright=2.5|[[Régression locale]] des sondages d'intentions de vote réalisés depuis {{date|septembre 2024}}{{note|groupe=alpha|Ce graphique compile différentes configurations de candidats au premier tour, tant que la configuration exacte n'est pas connue il faut interpréter ces courbes avec précaution.}}.]]
+
+=== Année 2026 ===
+==== Second semestre 2026 ====
+===== Octobre-décembre 2026 =====
+{| class="wikitable" style="font-size:80%; text-align:center;" width="100%"
+! rowspan=3 width=120px scope=col | Sondeur
+! rowspan=3 width=70px scope=col | Date
+! rowspan=3 width=70px scope=col | Échantillon
+! width=70px scope=col | [[Fichier:Nathalie Arthaud (LO) 19-05-2024.jpg|alt=Nathalie Arthaud|50x50px]]
+! width=70px scope=col | [[Fichier:Jean Luc Mélenchon en mai 2026- 55261894422 (cropped).jpg|50x50px]]
+! width=70px scope=col | [[Fichier:Roussel_Fabien_1.jpg|alt=Fabien Roussel|50x50px]]
+! width=70px scope=col | [[Fichier:20210819 tondelier.m-cr3.jpg|alt=Marine Tondelier|50x50px]]
+! width=70px scope=col | [[Fichier: 1720448398743 20240708 GLUCKSMANN Raphael FR 006.jpg|alt=Raphaël Glucksmann|50x50px]]
+! width=70px scope=col | [[Fichier:Gabriel Attal 2025 (close crop).jpg|alt=Gabriel Attal|50x50px]]
+! width=70px scope=col | [[Fichier:Edouard Philippe 3x4 crop.jpg|alt=Edouard Philippe|50x50px]]
+! width=70px scope=col | [[Fichier:David_Lisnard_en_2026.jpg|alt=David Lisnard|50x50px]]
+! width="70px" scope="col" | [[Fichier:Bruno Retailleau - Ministre de l'Intérieur français (cropped).jpg|alt=Bruno Retailleau|50x50px]]
+! width=70px scope=col | [[Fichier:Nicolas Dupont-Aignan, homme politique français (cropped).jpg|alt=Nicolas Dupont-Aignan|50x50px]]
+! width=70px scope=col | [[Fichier:Marine Le Pen 2025 (cropped).jpg|alt=Marine Le pen|50x50px]]
+! width=70px scope=col | [[Fichier:Portrait Éric Zemmour, avril 2022 cropped.jpg|alt=Éric Zemmour|50x50px]]
+! rowspan="2" width="70px" scope="col" | Autres
+|-
+! scope=col | [[Nathalie Arthaud|Arthaud]]<br><small>([[Lutte ouvrière|LO]])</small>
+! scope=col | [[Jean-Luc Mélenchon|Mélenchon]]<br><small>([[La France insoumise|LFI]])</small>
+! scope=col | [[Fabien Roussel|Roussel]]<br><small>([[Parti communiste français|PCF]])</small>
+! scope=col | [[Marine Tondelier|Tondelier]]<br><small>([[Les Écologistes|LE]])</small>
+! scope=col | [[Raphaël Glucksmann|Glucksmann]]<ref group="alpha" name="SaufPrécision">Sauf précision contraire.</ref><br><small>([[Place publique (parti politique)|PP]])<ref group=alpha name="SaufPrécision"/></small>
+! scope=col | [[Gabriel Attal|Attal]]<br><small>([[Renaissance (parti)|RE]])</small>
+! scope=col | [[Édouard Philippe|Philippe]]<br><small>([[Horizons|HOR]])</small>
+! scope=col | [[David Lisnard|Lisnard]]<br><small>([[Nouvelle Énergie|NE]])</small>
+! scope=col | [[Bruno Retailleau|Retailleau]]<br><small>([[Les Républicains|LR]])</small>
+! scope=col | [[Nicolas Dupont-Aignan|Dupont-Aignan]]<br><small>([[Debout la France|DLF]])</small>
+! scope=col | [[Marine Le Pen|Le Pen]]<br><small>([[Rassemblement national|RN]])</small>
+! scope=col | [[Éric Zemmour|Zemmour]]<br><small>([[Reconquête (parti politique)|REC]])</small>
+|- style="line-height:5px;"
+| {{Infobox Parti politique français/couleurs|LO}} |
+| {{Infobox Parti politique français/couleurs|LFI}} |
+| {{Infobox Parti politique français/couleurs|PCF}} |
+| {{Infobox Parti politique français/couleurs|LE}} |
+| {{Infobox Parti politique français/couleurs|PP}} |
+| {{Infobox Parti politique français/couleurs|RE}} |
+| {{Infobox Parti politique français/couleurs|HOR}} |
+| {{Infobox Parti politique français/couleurs|DVD}} |
+| {{Infobox Parti politique français/couleurs|LR}} |
+| {{Infobox Parti politique français/couleurs|DLF}} |
+| {{Infobox Parti politique français/couleurs|RN}} |
+| {{Infobox Parti politique français/couleurs|REC}} |
+| {{Infobox Parti politique français/couleurs|DIV}} |
+|-
+| rowspan="4" style="{{Sondeur|Ipsos}}" |[https://www.ipsos.com/fr-fr/presidentielle-2027-melenchon-progresse-le-pen-reste-en-tete Ipsos]
+| rowspan="4" |21-22 octobre
+| rowspan="4" |{{formatnum:1500}}
+|0,5
+| {{Infobox Parti politique français/couleurs|LFI}} | '''{{blanc|17}}'''
+|2
+|3,5
+|13
+|4
+|13
+|—
+|7,5
+|1,5
+| {{Infobox Parti politique français/couleurs|RN}} | '''{{blanc|33,5}}'''
+|4,5
+|—
+|-
+|0,5
+| {{Infobox Parti politique français/couleurs|LFI}} | '''{{blanc|17}}'''
+|2
+|3,5
+|14
+|—
+|15
+|—
+|8
+|2
+| {{Infobox Parti politique français/couleurs|RN}} | '''{{blanc|33,5}}'''
+|4,5
+|—
+|-
+|0,5
+| {{Infobox Parti politique français/couleurs|LFI}} | '''{{blanc|17}}'''
+|2,5
+|3,5
+|15,5
+|9,5
+|—
+|—
+|11,5
+|2
+| {{Infobox Parti politique français/couleurs|RN}} | '''{{blanc|33,5}}'''
+|4,5
+|—
+|-
+|0,5
+| {{Infobox Parti politique français/couleurs|LFI}} | '''{{blanc|17}}'''
+|2,5
+|3,5
+|13
+|—
+|14
+|6,5
+|5,5
+|1,5
+| {{Infobox Parti politique français/couleurs|RN}} | '''{{blanc|32}}'''
+|4
+|—
+|-
+| style="{{Sondeur|OpinionWay}}" |[https://www.commission-des-sondages.fr/notices/files/notices/2026/octobre/10333-pres-iv-opinionway-cnews-22-octobre.pdf OpinionWay]
+| 21-22 octobre
+| {{formatnum:973}}
+|<1
+| {{Infobox Parti politique français/couleurs|LFI}} | '''{{blanc|16}}'''
+|1
+|1
+|13
+|4
+|12
+|6
+|6
+|1
+| {{Infobox Parti politique français/couleurs|RN}} | '''{{blanc|36}}'''
+|4
+|<1<br><small>'''[[Karim Bouamrane|Bouamrane]]'''</small>
+|}
+== Sondages concernant le second tour ==
+{{Encart|style=important|contenu=Ces sondages sont listés par ordre antéchronologique : '''les plus récents sont présentés en tête''' afin que les données les plus proches de l'élection soient toujours présentées en premier.}}
+
+=== Sondages impliquant des candidats déclarés ou pressentis ===
+==== Hypothèse Attal – Le Pen ====
+{| class="wikitable" style="text-align:center;font-size:80%;line-height:14px;"
+|- bgcolor=lightgray
+! scope=col rowspan="3" style="width:140px;" | Sondeur
+! scope=col rowspan="3" style="width:120px;" | Dates
+! scope=col rowspan="3" style="width:40px;" | Échantillon
+! scope=col style="width:110px;" | [[Fichier:Gabriel Attal 2025 (close crop).jpg|alt=Gabriel Attal|95x95px]]
+! scope=col style="width:110px;" | [[Fichier:Marine Le Pen 2025 (cropped).jpg|95x95px]]
+|-
+! scope=col | [[Gabriel Attal|Attal]]<br><small>([[Renaissance (parti)|RE]])</small>
+! scope=col | [[Marine Le Pen|Le Pen]]<br><small>([[Rassemblement national|RN]])</small>
+|-
+| {{Infobox Parti politique français/couleurs|RE}} |
+| {{Infobox Parti politique français/couleurs|RN}} |
+|-
+| style="{{Sondeur|Ifop}}" |[https://www.commission-des-sondages.fr/notices/files/notices/2026/octobre/10327-pres-barometre-election-v7-ifop-20-octobre.pdf Ifop]
+|17-19 octobre 2026
+|{{formatnum:2081}}
+|42
+|{{Infobox Parti politique français/couleurs|RN}} |'''{{blanc|58}}'''
+|-
+| style="{{Sondeur|YouGov}}" |[https://www.commission-des-sondages.fr/notices/files/notices/2026/octobre/10323-pres-iv-yougov-le-huffpost-18-octobre.pdf YouGov]
+|12-15 octobre 2026
+|{{formatnum:1094}}
+|45
+| {{Infobox Parti politique français/couleurs|RN}} |'''{{blanc|55}}'''
+|-
+| style="{{Sondeur|YouGov}}" |[https://www.commission-des-sondages.fr/notices/files/notices/2026/septembre/10270-pres-iv-yougov-huffpost-23-septembre.pdf YouGov]
+|17-21 septembre 2026
+|{{formatnum:1103}}
+|43
+| {{Infobox Parti politique français/couleurs|RN}} |'''{{blanc|57}}'''
+|}
