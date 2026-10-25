@@ -18,14 +18,19 @@ Wikipédia ──(toutes les 6 h)──▶ Google Sheet ──(API JSON Apps Scr
 
 ### 1. Installer le script dans le classeur
 
-1. Ouvrir le classeur, menu **Extensions > Apps Script**.
-2. Remplacer le contenu de `Code.gs` par celui de [`apps-script/Code.gs`](apps-script/Code.gs).
-3. Ajouter un fichier de script nommé `Wikipedia` et y coller [`apps-script/Wikipedia.gs`](apps-script/Wikipedia.gs).
-4. Dans **Paramètres du projet**, cocher « Afficher le fichier manifeste », puis remplacer
-   `appsscript.json` par [`apps-script/appsscript.json`](apps-script/appsscript.json).
-5. Enregistrer, recharger le classeur : un menu **Sondages** apparaît.
-6. **Sondages > Mettre à jour depuis Wikipédia** (Google demande d’autoriser le script la première fois).
-7. **Sondages > Activer la mise à jour automatique (toutes les 6 h)**.
+À faire sur un **ordinateur** (l’éditeur de script n’existe pas dans l’application mobile Google Sheets).
+
+1. Ouvrir le classeur, menu **Extensions > Apps Script**. Un éditeur s’ouvre dans un nouvel onglet
+   avec un fichier `Code.gs` contenant `function myFunction() {}` : c’est normal.
+2. Tout effacer dans `Code.gs`, puis coller le contenu de
+   [`apps-script/A-COLLER-dans-Apps-Script.gs`](apps-script/A-COLLER-dans-Apps-Script.gs)
+   (sur GitHub : bouton « Copy raw file » en haut à droite du fichier).
+3. Enregistrer (icône disquette), revenir sur l’onglet du classeur et le recharger :
+   un menu **Sondages** apparaît à droite de « Aide ».
+4. **Sondages > Mettre à jour depuis Wikipédia**. La première fois, Google demande une autorisation :
+   choisir son compte, puis « Paramètres avancés » > « Accéder au projet (non sécurisé) » > « Autoriser »
+   (l’avertissement s’affiche pour tout script personnel non vérifié par Google).
+5. **Sondages > Activer la mise à jour automatique (toutes les 6 h)**.
 
 ### 2. Publier l’API
 
@@ -71,6 +76,7 @@ npm test    # tests du parseur Wikipédia et de la conversion des onglets
 |---|---|
 | `assets/donnees.js` | charge l’API (ou `data/snapshot.json`) et convertit les onglets en modèle |
 | `assets/app.js` | rendu des huit onglets de l’application |
+| `apps-script/A-COLLER-dans-Apps-Script.gs` | les deux fichiers ci-dessous réunis, à coller dans le classeur (`node scripts/assembler-apps-script.mjs`) |
 | `apps-script/Code.gs` | API JSON, menu, déclencheur, écriture des nouveaux sondages |
 | `apps-script/Wikipedia.gs` | lecture des tableaux de sondages Wikipédia (fonctions pures, testées sous Node) |
 | `scripts/extraire-page-originale.mjs` | extrait les données de la page d’origine (`archive/`) vers `data/snapshot.json` |
