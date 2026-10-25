@@ -26,6 +26,7 @@ function onOpen() {
     .addItem("Désactiver la mise à jour automatique", "supprimerDeclencheurs")
     .addSeparator()
     .addItem("Rafraîchir l’application web maintenant", "viderCache")
+    .addItem("Mettre à jour le script depuis GitHub", "scriptMiseAJourManuelle")
     .addToUi();
 }
 
@@ -100,13 +101,14 @@ function viderCache() {
 function installerDeclencheur() {
   supprimerDeclencheurs();
   ScriptApp.newTrigger("miseAJourAuto").timeBased().everyHours(6).create();
-  journal("déclencheur", "Mise à jour automatique activée (toutes les 6 heures)");
-  try { SpreadsheetApp.getUi().alert("Mise à jour automatique activée : toutes les 6 heures."); } catch (e) {}
+  ScriptApp.newTrigger("scriptMiseAJourAuto").timeBased().everyDays(1).atHour(5).create();
+  journal("déclencheur", "Mise à jour automatique activée : sondages toutes les 6 heures, script chaque nuit");
+  try { SpreadsheetApp.getUi().alert("Mise à jour automatique activée : sondages toutes les 6 heures, script chaque nuit."); } catch (e) {}
 }
 
 function supprimerDeclencheurs() {
   ScriptApp.getProjectTriggers().forEach(function (t) {
-    if (t.getHandlerFunction() === "miseAJourAuto") ScriptApp.deleteTrigger(t);
+    if (["miseAJourAuto", "scriptMiseAJourAuto"].indexOf(t.getHandlerFunction()) >= 0) ScriptApp.deleteTrigger(t);
   });
 }
 

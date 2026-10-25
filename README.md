@@ -18,19 +18,36 @@ Wikipédia ──(toutes les 6 h)──▶ Google Sheet ──(API JSON Apps Scr
 
 ### 1. Installer le script dans le classeur
 
-À faire sur un **ordinateur** (l’éditeur de script n’existe pas dans l’application mobile Google Sheets).
+À faire **une seule fois**, sur un **ordinateur** (l’éditeur de script n’existe pas dans l’application mobile Google Sheets).
+Ensuite le script se met à jour tout seul depuis GitHub (voir plus bas).
 
-1. Ouvrir le classeur, menu **Extensions > Apps Script**. Un éditeur s’ouvre dans un nouvel onglet
+1. Activer l’API Apps Script pour son compte : ouvrir <https://script.google.com/home/usersettings>
+   et mettre **« API Google Apps Script »** sur **Activé**.
+2. Ouvrir le classeur, menu **Extensions > Apps Script**. Un éditeur s’ouvre dans un nouvel onglet
    avec un fichier `Code.gs` contenant `function myFunction() {}` : c’est normal.
-2. Tout effacer dans `Code.gs`, puis coller le contenu de
+3. Tout effacer dans `Code.gs`, puis coller le contenu de
    [`apps-script/A-COLLER-dans-Apps-Script.gs`](apps-script/A-COLLER-dans-Apps-Script.gs)
-   (sur GitHub : bouton « Copy raw file » en haut à droite du fichier).
-3. Enregistrer (icône disquette), revenir sur l’onglet du classeur et le recharger :
-   un menu **Sondages** apparaît à droite de « Aide ».
-4. **Sondages > Mettre à jour depuis Wikipédia**. La première fois, Google demande une autorisation :
+   (sur GitHub : bouton « Copy raw file » en haut à droite du fichier). Enregistrer (icône disquette).
+4. Dans l’éditeur, **Paramètres du projet** (roue dentée à gauche) > cocher
+   **« Afficher le fichier manifeste "appsscript.json" dans l’éditeur »**. Revenir à l’éditeur (`< >` à gauche),
+   ouvrir `appsscript.json`, tout remplacer par [`apps-script/appsscript.json`](apps-script/appsscript.json), enregistrer.
+5. Revenir sur l’onglet du classeur et le recharger : un menu **Sondages** apparaît à droite de « Aide ».
+6. **Sondages > Mettre à jour depuis Wikipédia**. La première fois, Google demande une autorisation :
    choisir son compte, puis « Paramètres avancés » > « Accéder au projet (non sécurisé) » > « Autoriser »
    (l’avertissement s’affiche pour tout script personnel non vérifié par Google).
-5. **Sondages > Activer la mise à jour automatique (toutes les 6 h)**.
+7. **Sondages > Activer la mise à jour automatique** : sondages toutes les 6 heures, script chaque nuit.
+
+### Mises à jour du script : automatiques
+
+Chaque nuit (et à la demande via **Sondages > Mettre à jour le script depuis GitHub**), le script lit
+sa dernière version dans la branche `main` de ce dépôt. Si elle a changé, il remplace son propre code
+et republie l’application web à la même adresse `/exec`. Le résultat est noté dans l’onglet `journal`.
+
+- Il suffit donc de fusionner une modification sur `main` : le classeur l’applique la nuit suivante.
+- Réglages dans l’onglet `parametres` : `maj_script = non` pour suspendre, `script_branche` pour suivre une autre branche.
+- Si une nouvelle version demande une autorisation supplémentaire, Google la redemande au prochain usage du menu.
+- Le code exécuté vient de GitHub avec les droits de votre compte Google : seules les personnes autorisées
+  à écrire sur `main` doivent pouvoir modifier ce dépôt.
 
 ### 2. Publier l’API
 
@@ -76,8 +93,9 @@ npm test    # tests du parseur Wikipédia et de la conversion des onglets
 |---|---|
 | `assets/donnees.js` | charge l’API (ou `data/snapshot.json`) et convertit les onglets en modèle |
 | `assets/app.js` | rendu des huit onglets de l’application |
-| `apps-script/A-COLLER-dans-Apps-Script.gs` | les deux fichiers ci-dessous réunis, à coller dans le classeur (`node scripts/assembler-apps-script.mjs`) |
+| `apps-script/A-COLLER-dans-Apps-Script.gs` | les fichiers .gs ci-dessous réunis, à coller dans le classeur (`node scripts/assembler-apps-script.mjs`) |
 | `apps-script/Code.gs` | API JSON, menu, déclencheur, écriture des nouveaux sondages |
+| `apps-script/MiseAJourScript.gs` | mise à jour du script par lui-même depuis GitHub, et republication de l’application web |
 | `apps-script/Wikipedia.gs` | lecture des tableaux de sondages Wikipédia (fonctions pures, testées sous Node) |
 | `scripts/extraire-page-originale.mjs` | extrait les données de la page d’origine (`archive/`) vers `data/snapshot.json` |
 | `scripts/importer-wikipedia.mjs` | applique la même mise à jour Wikipédia au fichier de secours |

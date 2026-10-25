@@ -184,7 +184,9 @@ add("parametres",
   ["popularite_source", "Part de « bonnes opinions » dans le baromètre mensuel Ifop-Fiducial pour Paris Match et Sud Radio (pas de vague en août)."],
   ["popularite_commentaire", "En octobre 2026, 41 des 50 personnalités testées reculent ; Raphaël Glucksmann et David Lisnard sont les principales exceptions."],
   ["citations_fin", iso(CIT_END)],
-  ["sondages_2027_depuis", "2026-02-20"]);
+  ["sondages_2027_depuis", "2026-02-20"],
+  ["maj_script", "oui"],
+  ["script_branche", "main"]);
 tab("journal", ["date", "action", "details"]);
 add("journal", ["2026-10-23", "import initial", "Données reprises de la page d’origine"]);
 
