@@ -67,7 +67,8 @@ test("popularité, âges, Assemblée, audiences", () => {
   for (const y of ["2017", "2022", "2027"]) {
     assert.deepEqual(plain(M.RAW.pop[y].pres), plain(ORIG.RAW.pop[y].pres));
     assert.deepEqual(plain(M.RAW.pop[y].pm), plain(ORIG.RAW.pop[y].pm));
-    assert.deepEqual(plain(M.AGE[y]), plain(ORIG.AGE[y]));
+    const { votants, ...age } = plain(M.AGE[y]);
+    assert.deepEqual(age, plain(ORIG.AGE[y]));
   }
   const cand = Object.fromEntries(Object.entries(ORIG.RAW.pop["2027"].cand).map(([k, o]) => [k, Object.fromEntries(Object.entries(o).map(([m, v]) => ["2026-" + m, v]))]));
   assert.deepEqual(plain(M.RAW.pop["2027"].cand), cand);
@@ -95,4 +96,15 @@ test("duels de second tour 2027 proches de la page d'origine", () => {
     const va = sa(m.a) === nom(o.a) ? m.avgA : m.avgB;
     assert.ok(Math.abs(va - o.avgA) <= 1, `${o.a}-${o.b} : ${va} contre ${o.avgA}`);
   }
+});
+
+test("part des votants par âge : inscrits × participation, ramenée à 100", () => {
+  for (const y of ["2017", "2022"]) {
+    const V = M.AGE[y].votants;
+    assert.ok(V, y);
+    assert.equal(V.inscrits.length, M.AGE[y].groups.length);
+    assert.ok(Math.abs(V.votants.reduce((a, b) => a + b, 0) - 100) <= 0.2, y);
+  }
+  assert.deepEqual(plain(M.AGE["2022"].votants.votants), [8.7, 10.6, 23.6, 17.8, 18.4, 20.8]);
+  assert.equal(M.AGE["2027"].votants, null);
 });

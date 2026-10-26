@@ -114,6 +114,16 @@ for (const y of YEARS) {
     if (A.abst) add("abstention_age", [y, g, A.abst[i]]);
   });
 }
+// Part de chaque tranche d'âge parmi les inscrits (Insee Focus n° 241, liste électorale principale au 24 mai 2021),
+// puis parmi les votants : part des inscrits × participation de la tranche, ramenée à 100.
+const INSCRITS_AGE = [11.1, 14.5, 22.4, 16.5, 15.5, 20.0];
+tab("inscrits_age", ["election", "tranche", "part_inscrits", "abstention", "part_votants"]);
+for (const y of YEARS) {
+  const A = D.AGE[y];
+  if (!A.abst || A.groups.length !== INSCRITS_AGE.length) continue;
+  const poids = INSCRITS_AGE.map((p, i) => p * (100 - A.abst[i])), total = poids.reduce((a, b) => a + b, 0);
+  A.groups.forEach((g, i) => add("inscrits_age", [y, g, INSCRITS_AGE[i], A.abst[i], Math.round(poids[i] / total * 1000) / 10]));
+}
 
 /* ---- Assemblée ---- */
 tab("assemblee", ["date_cle", "libelle", "description", "vacants"]);
@@ -181,6 +191,7 @@ add("parametres",
   ["wikipedia_page", "Liste de sondages sur l'élection présidentielle française de 2027"],
   ["derniere_maj", "2026-10-23"],
   ["popularite_age_source", D.POPAGE.src],
+  ["inscrits_age_source", "Insee, Focus n° 241 : électeurs inscrits sur la liste principale par âge au 24 mai 2021 (même répartition appliquée à 2017, faute de chiffres publiés au même format)."],
   ["popularite_source", "Part de « bonnes opinions » dans le baromètre mensuel Ifop-Fiducial pour Paris Match et Sud Radio (pas de vague en août)."],
   ["popularite_commentaire", "En octobre 2026, 41 des 50 personnalités testées reculent ; Raphaël Glucksmann et David Lisnard sont les principales exceptions."],
   ["citations_fin", iso(CIT_END)],
