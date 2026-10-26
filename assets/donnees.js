@@ -156,14 +156,19 @@ function construireModele(json) {
   const POPAGE = { src: txt(PARAM.popularite_age_source), groups: groupesAge, v };
 
   /* vote par âge */
-  const elections = L("elections"), abst = L("abstention_age"), AGE = {};
+  const elections = L("elections"), abst = L("abstention_age"), insc = L("inscrits_age"), AGE = {};
   for (const [y, rs] of grouper(L("vote_age"), "election")) {
     const groups = [...new Set(rs.map((r) => txt(r.tranche)))], cols = [];
     for (const r of rs) if (!cols.some((c) => c[0] === txt(r.cle))) cols.push([txt(r.cle), txt(r.nom), txt(r.couleur)]);
     const vals = groups.map((g) => cols.map((c) => { const x = rs.find((r) => txt(r.tranche) === g && txt(r.cle) === c[0]); return x ? num(x.valeur) : null; }));
     const ab = groups.map((g) => { const x = abst.find((r) => txt(r.election) === y && txt(r.tranche) === g); return x ? num(x.valeur) : null; });
     const e = elections.find((r) => txt(r.election) === y) || {};
-    AGE[y] = { src: txt(e.source_age), groups, cols, v: vals, abst: ab.some((x) => x !== null) ? ab : null };
+    // part des inscrits par tranche, puis part des votants = inscrits × participation, ramenée à 100
+    const pi = groups.map((g) => { const x = insc.find((r) => txt(r.election) === y && txt(r.tranche) === g); return x ? num(x.part_inscrits) : null; });
+    const poids = pi.every((x) => x !== null) && ab.every((x) => x !== null) ? pi.map((p, i) => p * (100 - ab[i])) : null;
+    const total = poids && poids.reduce((a, b) => a + b, 0);
+    const votants = total ? { inscrits: pi, votants: poids.map((w) => Math.round(w / total * 1000) / 10), src: txt(PARAM.inscrits_age_source) } : null;
+    AGE[y] = { src: txt(e.source_age), groups, cols, v: vals, abst: ab.some((x) => x !== null) ? ab : null, votants };
   }
 
   /* instituts, médias, liens */

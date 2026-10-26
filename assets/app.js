@@ -193,17 +193,27 @@ function ageStack(canvas,A,unit){
       scales:{x:{stacked:true,max:unit||100,grid:{color:grid},ticks:{color:txt,callback:v=>v+" %"}},y:{stacked:true,grid:{display:false},ticks:{color:cssVar("--ink"),font:{size:11}}}}}});
 }
 function renderAgeVote(){
-  killCharts(["age1","age2"]);const A=AGE[Y],box=document.getElementById("ageVote");
+  killCharts(["age1","age2","age3"]);const A=AGE[Y],box=document.getElementById("ageVote");
   const lead=A.groups.map((g,i)=>{let b=-1,bk=0;A.v[i].forEach((x,j)=>{if(x!=null&&x>b){b=x;bk=j;}});return `<b>${g}</b> : ${A.cols[bk][1]} (${fmt(b)} %)`;}).join(" · ");
   box.innerHTML=`<h2>Le vote par tranche d’âge</h2><p class="lede">${ERA.live?"Intentions de vote au premier tour selon l’âge.":"Ce que chaque tranche d’âge a réellement voté au premier tour."} Faites glisser le doigt sur une barre pour lire les scores, du plus fort au plus faible.</p>
     <p class="hint" style="margin-bottom:8px">En tête — ${lead}</p>
     <div class="bars-box" style="height:${A.groups.length*48+110}px"><canvas aria-label="Vote par tranche d’âge"></canvas></div>
     <p class="hint">Source : ${A.src}${ERA.live?" Attention : dans un sondage de 1 000 personnes, il n’y a qu’une centaine de 18-24 ans, soit une marge d’erreur de 8 à 10 points sur cette tranche. C’est pour cela que la page fait la moyenne de plusieurs sondages. Les candidats absents de certains sondages sont moyennés sur ceux où ils sont testés : les totaux ne font donc pas exactement 100 %.":""}</p>`+
-    (A.abst?`<h2 style="margin-top:18px;font-size:1.1rem">Qui n’est pas allé voter ?</h2><p class="lede">Part d’abstention dans chaque tranche d’âge au premier tour. Les jeunes votent beaucoup moins : leur poids réel dans le résultat est donc plus faible que leur poids dans la population.</p><div class="small-chart" style="height:230px"><canvas aria-label="Abstention par âge"></canvas></div>`:"");
+    (A.abst?`<h2 style="margin-top:18px;font-size:1.1rem">Qui n’est pas allé voter ?</h2><p class="lede">Part d’abstention dans chaque tranche d’âge au premier tour. Les jeunes votent beaucoup moins : leur poids réel dans le résultat est donc plus faible que leur poids dans la population.</p><div class="small-chart" style="height:230px"><canvas aria-label="Abstention par âge"></canvas></div>`:"")+
+    (A.votants?`<h2 style="margin-top:18px;font-size:1.1rem">Qui a vraiment fait l’élection ?</h2><p class="lede">Poids de chaque tranche d’âge parmi les inscrits, puis parmi les votants du premier tour. ${votantsPhrase(A)}</p><div class="small-chart" style="height:250px"><canvas aria-label="Part des votants par âge"></canvas></div><p class="hint">Calcul : part des inscrits × participation de la tranche, ramenée à 100. Inscrits : ${A.votants.src} Abstention : ${A.src}</p>`:"");
   CH.age1=ageStack(box.querySelector("canvas"),A,ERA.live?110:100);
   if(A.abst){const txt=cssVar("--muted");CH.age2=new Chart(box.querySelectorAll("canvas")[1],{type:"bar",data:{labels:A.groups,datasets:[{label:"Abstention",data:A.abst,backgroundColor:A.abst.map(v=>v>=35?"#B23A3A":v>=25?"#D97706":"#64748B"),borderRadius:4}]},
     options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:"index",intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:it=>`Abstention : ${it.parsed.y} %`}}},
       scales:{x:{ticks:{color:txt,font:{size:10}},grid:{display:false}},y:{beginAtZero:true,max:50,ticks:{color:txt,callback:v=>v+" %"},grid:{color:cssVar("--line")}}}}});}
+  if(A.votants){const txt=cssVar("--muted"),V=A.votants;CH.age3=new Chart(box.querySelectorAll("canvas")[A.abst?2:1],{type:"bar",data:{labels:A.groups,datasets:[
+      {label:"Part des inscrits",data:V.inscrits,backgroundColor:"#94A3B8",borderRadius:3},{label:"Part des votants",data:V.votants,backgroundColor:"#2563EB",borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:"index",intersect:false},plugins:{legend:{position:"bottom",labels:{color:txt,boxWidth:10,font:{size:11}}},
+      tooltip:{callbacks:{label:it=>`${it.dataset.label} : ${fmt(it.parsed.y)} %`,afterBody:its=>{const i=its[0].dataIndex,d=V.votants[i]-V.inscrits[i];return `Écart : ${d>0?"+":""}${fmt(Math.round(d*10)/10)} point${Math.abs(d)>=2?"s":""}`;}}}},
+      scales:{x:{ticks:{color:txt,font:{size:10}},grid:{display:false}},y:{beginAtZero:true,ticks:{color:txt,callback:v=>v+" %"},grid:{color:cssVar("--line")}}}}});}
+}
+function votantsPhrase(A){
+  const V=A.votants,n=A.groups.length,jeunes=V.votants[0]+V.votants[1],jeunesI=V.inscrits[0]+V.inscrits[1],vieux=V.votants[n-2]+V.votants[n-1],vieuxI=V.inscrits[n-2]+V.inscrits[n-1];
+  return `Les moins de 35 ans représentent ${fmt(Math.round(jeunesI*10)/10)} % des inscrits mais seulement ${fmt(Math.round(jeunes*10)/10)} % des votants ; les 60 ans et plus, ${fmt(Math.round(vieuxI*10)/10)} % des inscrits et ${fmt(Math.round(vieux*10)/10)} % des votants.`;
 }
 function renderAgePop(){
   const box=document.getElementById("popBlocks");
