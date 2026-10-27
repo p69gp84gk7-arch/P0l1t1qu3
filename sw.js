@@ -1,6 +1,6 @@
 /* Service worker : l'application reste consultable hors connexion
    (dernière version vue), tout en allant toujours chercher la plus récente en ligne. */
-const CACHE = "presidentielles-v4";
+const CACHE = "presidentielles-v5";
 const COQUILLE = ["./", "index.html", "config.js", "assets/styles.css", "assets/donnees.js", "assets/app.js",
   "assets/demarrage.js", "data/snapshot.json", "manifest.webmanifest", "assets/icone.svg"];
 

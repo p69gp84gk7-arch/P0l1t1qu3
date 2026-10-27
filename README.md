@@ -83,6 +83,9 @@ Sur téléphone, « Ajouter à l’écran d’accueil » installe l’applicatio
   PDF existe, la ligne porte le lien et les montants sont à saisir. Vérification immédiate : menu
   **Sondages > Vérifier les déclarations de patrimoine (HATVP)**. Suspendre : `parametres > maj_patrimoine = non`.
   La colonne `fortune_estimee` (estimation publiée par la presse d’une fortune absente de la déclaration) se remplit à la main.
+- **Affaires judiciaires** (onglet `justice`, une ligne par affaire) : mise à jour à la main quand une décision tombe
+  (par exemple l’arrêt de la Cour de cassation attendu pour Marine Le Pen avant le premier tour de 2027) : changer
+  `statut`, `date`, `peine` et les montants. Ne retenir que des décisions et des procédures ouvertes par la justice.
 - **Popularité, Assemblée, médias, citations** : mises à jour manuelles dans les onglets correspondants.
 - **Suspendre la mise à jour auto** : `parametres > maj_auto = non`.
 
@@ -98,13 +101,14 @@ npm test    # tests du parseur Wikipédia et de la conversion des onglets
 | Fichier | Rôle |
 |---|---|
 | `assets/donnees.js` | charge l’API (ou `data/snapshot.json`) et convertit les onglets en modèle |
-| `assets/app.js` | rendu des neuf onglets de l’application |
+| `assets/app.js` | rendu des dix onglets de l’application |
 | `apps-script/A-COLLER-dans-Apps-Script.gs` | les fichiers .gs ci-dessous réunis, à coller dans le classeur (`node scripts/assembler-apps-script.mjs`) |
 | `apps-script/Code.gs` | API JSON, menu, déclencheur, écriture des nouveaux sondages |
 | `apps-script/MiseAJourScript.gs` | mise à jour du script par lui-même depuis GitHub, et republication de l’application web |
 | `apps-script/Patrimoine.gs` | repère les déclarations de patrimoine des candidats publiées par la HATVP et calcule les montants depuis le XML |
 | `apps-script/Wikipedia.gs` | lecture des tableaux de sondages Wikipédia (fonctions pures, testées sous Node) |
 | `scripts/extraire-page-originale.mjs` | extrait les données de la page d’origine (`archive/`) vers `data/snapshot.json` |
+| `scripts/justice-initial.mjs` | affaires judiciaires des candidats et de leurs partis (situation au 27 octobre 2026, sources par affaire) |
 | `scripts/patrimoine-initial.mjs` | patrimoine déclaré des candidats 2017 et 2022 (sources et méthode dans le fichier) |
 | `scripts/importer-wikipedia.mjs` | applique la même mise à jour Wikipédia au fichier de secours |
 

@@ -124,3 +124,18 @@ test("patrimoine : classement par année sur patrimoine déclaré + fortune esti
   assert.equal(p17.find((x) => x.cle === "lr").net, 974888 - 80000);
   assert.equal(M.PATRI["2027"], undefined);
 });
+
+test("justice : affaires rattachées aux candidats de chaque élection", () => {
+  const J = M.JUSTICE;
+  const lepen22 = J["2022"].lepen;
+  assert.ok(lepen22.some((a) => a.id === "lepen-assistants-ue" && a.statut === "non_definitive" && a.inelig === 45));
+  assert.ok(lepen22.some((a) => a.type === "parti"));
+  assert.equal(J["2027"].rn.length, lepen22.length + 2); // + groupe ID et Bardella
+  assert.equal(J["2017"].lr[0].statut, "definitive");
+  assert.ok(J["2022"].zemmour.filter((a) => a.statut === "definitive").length >= 8);
+  const statuts = new Set(["definitive", "non_definitive", "civile", "en_cours", "relaxe", "non_lieu", "classee"]);
+  for (const y of Object.keys(J)) for (const L of Object.values(J[y])) for (const a of L) {
+    assert.ok(statuts.has(a.statut), `${a.id} : ${a.statut}`);
+    assert.ok(a.src && a.lien && /^\d{4}-\d\d-\d\d$/.test(a.date), a.id);
+  }
+});

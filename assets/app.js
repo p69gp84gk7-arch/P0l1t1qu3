@@ -1,6 +1,6 @@
 /* Application : rendu des onglets à partir des données chargées (voir donnees.js). */
 function lancerApplication(D){
-const {RAW,AGE,POPAGE,SV,PATRI,PUB,C27,POPC,POPN,ERAS,TVAGE,AN,VOTE,MTYPE,MOWN,PARAM,couleurDuel}=D;
+const {RAW,AGE,POPAGE,SV,PATRI,JUSTICE,PUB,C27,POPC,POPN,ERAS,TVAGE,AN,VOTE,MTYPE,MOWN,PARAM,couleurDuel}=D;
 const POS=["Gauche radicale","Gauche","Centre-gauche","Centre","Centre-droit","Droite","Droite conserv. / identitaire"];
 const POSC=["#9F1239","#E11D48","#F472B6","#A78BFA","#60A5FA","#2563EB","#1E3A8A"];
 const TYPES=["TV","Radio","Presse","Magazine","En ligne"];
@@ -617,6 +617,61 @@ function renderPatri(){
         scales:{x:{stacked:true,grid:{color:grid},ticks:{color:txt,callback:v=>v>=1e6?v/1e6+" M€":v>0?v/1e3+" k€":"0"}},y:{stacked:true,grid:{display:false},ticks:{color:cssVar("--ink"),font:{size:11}}}}}});
   }
 }
+/* ================= Justice ================= */
+const JST={definitive:["Condamnation définitive","#B23A3A"],non_definitive:["Condamnation non définitive","#D97706"],civile:["Condamnation civile ou sanction","#7C3AED"],
+  en_cours:["Procédure en cours","#2563EB"],relaxe:["Relaxe","#1F7A4D"],non_lieu:["Non-lieu","#1F7A4D"],classee:["Classée sans suite","#64748B"]};
+const FERMEES=new Set(["relaxe","non_lieu","classee"]);
+const moisTxt=m=>m==null?"":m%12===0?`${m/12} an${m>12?"s":""}`:`${m} mois`;
+// Noms complets des candidats 2027 (l'onglet candidats ne garde que le nom de famille)
+const NOMS_2027={rn:"Marine Le Pen / Jordan Bardella",melenchon:"Jean-Luc Mélenchon",philippe:"Édouard Philippe",glucksmann:"Raphaël Glucksmann",retailleau:"Bruno Retailleau",
+  attal:"Gabriel Attal",lisnard:"David Lisnard",zemmour:"Éric Zemmour",tondelier:"Marine Tondelier",roussel:"Fabien Roussel","dupont-aignan":"Nicolas Dupont-Aignan",arthaud:"Nathalie Arthaud"};
+function justiceBilan(L){
+  const n=st=>L.filter(a=>a.statut===st).length,actives=L.filter(a=>!FERMEES.has(a.statut));
+  return {def:n("definitive"),nd:n("non_definitive"),civ:n("civile"),enc:n("en_cours"),
+    amendes:actives.filter(a=>a.statut!=="en_cours").reduce((t,a)=>t+(a.amende||0),0),sommes:actives.reduce((t,a)=>t+(a.sommes||0),0)};
+}
+function justiceCandidats(){
+  // candidats réellement présents (résultats) pour 2017 et 2022, candidats affichés pour 2027
+  const ks=ERA.results?Object.keys(ERA.results.r1).sort((a,b)=>ERA.results.r1[b]-ERA.results.r1[a]):Object.keys(ERA.C);
+  const nomP=k=>((PATRI[Y]||[]).find(x=>x.cle===k)||{}).nom||(Y==="2027"?NOMS_2027[k]:"");
+  return ks.map(k=>{const L=(JUSTICE[Y]||{})[k]||[];
+    return {k,nom:nomP(k)||(ERA.C[k]?ERA.C[k].n:k),L,perso:justiceBilan(L.filter(a=>a.type!=="parti")),parti:justiceBilan(L.filter(a=>a.type==="parti")),
+      nomParti:(L.find(a=>a.type==="parti")||{}).nom};})
+    .sort((a,b)=>b.perso.def-a.perso.def||b.perso.nd-a.perso.nd||b.perso.civ-a.perso.civ||b.perso.enc-a.perso.enc||
+      (b.parti.def+b.parti.nd+b.parti.civ+b.parti.enc)-(a.parti.def+a.parti.nd+a.parti.civ+a.parti.enc));
+}
+function renderJustice(){
+  killCharts(["justice"]);
+  const box=document.getElementById("justiceBox"),C=justiceCandidats(),tot=b=>b.def+b.nd+b.civ+b.enc,avec=C.filter(c=>tot(c.perso)+tot(c.parti)>0);
+  const carte=a=>{const[lab,col]=JST[a.statut]||[a.statut,"#64748B"];
+    const peines=[a.ferme?`${moisTxt(a.ferme)} de prison ferme`:"",a.sursis?`${moisTxt(a.sursis)} avec sursis`:"",a.amende?`amende ${eur(a.amende)}`:"",a.inelig?`${moisTxt(a.inelig)} d’inéligibilité`:"",a.sommes?`à verser ${eur(a.sommes)}`:""].filter(Boolean);
+    return `<li class="aff"><div class="ah"><span class="badge" style="background:${col}">${lab}</span>${a.type==="parti"?'<span class="tag">Parti</span>':""}<span class="dt">${a.date?new Date(a.date+"T12:00:00").toLocaleDateString("fr-FR",{month:"long",year:"numeric"}):""}</span></div>
+      <b>${esc(a.affaire)}</b><div class="dt">${esc(a.nom)} · ${esc(a.infraction)}</div>
+      ${peines.length?`<div class="pn">${peines.map(p=>`<span>${p}</span>`).join("")}</div>`:""}
+      ${a.peine?`<div class="dt">${esc(a.peine)}</div>`:""}
+      ${a.resume||a.sommesDetail||a.src?`<details><summary>Détail et source</summary>${a.resume?`<p>${esc(a.resume)}</p>`:""}${a.sommesDetail?`<p>${esc(a.sommesDetail)}</p>`:""}<p class="dt">Source : ${a.lien?`<a href="${esc(a.lien)}" target="_blank" rel="noopener">${esc(a.src||"lien")}</a>`:esc(a.src)}</p></details>`:""}</li>`;};
+  const resume=(b,vide)=>{const chips=[b.def?`${b.def} condamnation${b.def>1?"s":""} définitive${b.def>1?"s":""}`:"",b.nd?`${b.nd} condamnation${b.nd>1?"s":""} non définitive${b.nd>1?"s":""}`:"",
+      b.civ?`${b.civ} condamnation${b.civ>1?"s":""} civile${b.civ>1?"s":""} ou sanction${b.civ>1?"s":""}`:"",b.enc?`${b.enc} procédure${b.enc>1?"s":""} en cours`:""].filter(Boolean);
+    const argent=[b.amendes?`amendes ${eur(b.amendes)}`:"",b.sommes?`dommages, remboursements et confiscations ${eur(b.sommes)}`:""].filter(Boolean);
+    return (chips.length?chips.join(" · "):vide)+(argent.length?`<br>Sommes en jeu : ${argent.join(" ; ")}`:"");};
+  let h=`<h2>Le volet judiciaire des candidats de ${Y}</h2>
+    <p class="lede">Pour chaque candidat : ses condamnations (définitives ou non), les procédures en cours le visant, celles visant son parti, et ce qu’il a été condamné à payer. Classement par nombre de condamnations définitives du candidat lui-même. Situation au 27 octobre 2026.</p>`;
+  if(avec.length)h+=`<div class="bars-box" style="height:${avec.length*34+100}px"><canvas aria-label="Nombre d’affaires par candidat"></canvas></div>`;
+  h+=`<div class="jlist">${C.map(c=>{const ouvertes=c.L.filter(a=>!FERMEES.has(a.statut)),fermees=c.L.filter(a=>FERMEES.has(a.statut));
+    return `<article class="jc"><div class="jh"><i style="background:${(ERA.C[c.k]&&ERA.C[c.k].c)||"#64748B"}"></i><h3>${esc(c.nom)}</h3></div>
+      <dl class="jb"><div><dt>Personnellement</dt><dd>${resume(c.perso,"aucune condamnation ni procédure en cours connue")}</dd></div>
+      ${tot(c.parti)?`<div><dt>Son parti${c.nomParti?` (${esc(c.nomParti)})`:""}</dt><dd>${resume(c.parti,"")}</dd></div>`:""}</dl>
+      ${ouvertes.length?`<details class="closed"><summary>Voir ${ouvertes.length>1?`les ${ouvertes.length} affaires`:"l’affaire"}</summary><ul class="affs">${ouvertes.map(carte).join("")}</ul></details>`:""}
+      ${fermees.length?`<details class="closed"><summary>Relaxes, non-lieux et classements (${fermees.length})</summary><ul class="affs">${fermees.map(carte).join("")}</ul></details>`:""}</article>`;}).join("")}</div>`;
+  box.innerHTML=h;
+  if(avec.length){const txt=cssVar("--muted"),grid=cssVar("--line");
+    const ds=[["def","definitive"],["nd","non_definitive"],["civ","civile"],["enc","en_cours"]].map(([k,st])=>({label:JST[st][0],data:avec.map(c=>c.perso[k]),backgroundColor:JST[st][1],borderRadius:2}));
+    ds.push({label:"Affaires visant le parti",data:avec.map(c=>tot(c.parti)),backgroundColor:"#94A3B8",borderRadius:2});
+    CH.justice=new Chart(box.querySelector("canvas"),{type:"bar",data:{labels:avec.map(c=>c.nom),datasets:ds},
+      options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:"index",intersect:false},
+        plugins:{legend:{position:"bottom",labels:{color:txt,boxWidth:10,font:{size:11}}},tooltip:{filter:it=>it.parsed.x>0}},
+        scales:{x:{stacked:true,grid:{color:grid},ticks:{color:txt,precision:0}},y:{stacked:true,grid:{display:false},ticks:{color:cssVar("--ink"),font:{size:11},callback:function(v){const l=this.getLabelForValue(v);return l.length>24?l.slice(0,23)+"…":l;}}}}}});}
+}
 /* ================= Navigation ================= */
 let TAB="sondages";
 function updHash(){try{history.replaceState(null,"","#"+TAB+"-"+Y);}catch(e){}}
@@ -624,7 +679,7 @@ function setEra(y,fromLoad){
   Y=y;ERA=ERAS[y];visible=new Set(ERA.visible);killCharts();
   document.getElementById("title").textContent=ERA.title;document.getElementById("eraSub").textContent=ERA.sub;
   document.querySelectorAll(".timewarp button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.y===y)));
-  renderPolls();renderAgeVote();renderPop();renderAgePop();renderInst();renderMedia();renderAgeMedia();renderLinks();renderAN();renderCompare();renderCit();renderPatri();if(!fromLoad)updHash();
+  renderPolls();renderAgeVote();renderPop();renderAgePop();renderInst();renderMedia();renderAgeMedia();renderLinks();renderAN();renderCompare();renderCit();renderPatri();renderJustice();if(!fromLoad)updHash();
 }
 document.querySelectorAll(".timewarp button").forEach(b=>b.onclick=()=>{setEra(b.dataset.y);});
 const TABS=[...document.querySelectorAll('[role="tab"]')];
@@ -634,7 +689,7 @@ TABS.forEach(b=>b.onclick=()=>showTab(b.getAttribute("aria-controls"),true));
 /* ================= Démarrage ================= */
 (function start(){
   const h=(location.hash||"").slice(1).split("-");let y="2027",t="sondages";
-  if(["sondages","popularite","assemblee","comparer","patrimoine","citations","instituts","medias","liens"].includes(h[0]))t=h[0];if(ERAS[h[1]])y=h[1];
+  if(["sondages","popularite","assemblee","comparer","patrimoine","justice","citations","instituts","medias","liens"].includes(h[0]))t=h[0];if(ERAS[h[1]])y=h[1];
   setEra(y,true);showTab(t,false);
   if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>setEra(Y,true));
 })();

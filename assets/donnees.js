@@ -256,8 +256,24 @@ function construireModele(json) {
     PATRI[y] = l;
   }
 
+  /* justice : affaires par élection et par candidat (colonne candidats : « année:clé ; … ») */
+  const JUSTICE = {};
+  for (const r of L("justice")) {
+    const a = {
+      id: txt(r.id), type: txt(r.type) || "personne", nom: txt(r.nom), affaire: txt(r.affaire), infraction: txt(r.infraction),
+      statut: txt(r.statut).trim(), date: jour(r.date), peine: txt(r.peine), ferme: num(r.prison_ferme_mois), sursis: num(r.prison_sursis_mois),
+      amende: num(r.amende_eur), inelig: num(r.ineligibilite_mois), sommes: num(r.sommes_eur), sommesDetail: txt(r.sommes_detail),
+      resume: txt(r.resume), src: txt(r.source), lien: txt(r.lien),
+    };
+    for (const c of txt(r.candidats).split(";")) {
+      const [y, cle] = c.split(":").map((x) => x.trim());
+      if (!y || !cle) continue;
+      ((JUSTICE[y] = JUSTICE[y] || {})[cle] = JUSTICE[y][cle] || []).push(a);
+    }
+  }
+
   return {
-    RAW, AGE, POPAGE, SV, PATRI, PUB: L("acteurs_publics").map((r) => ({ n: txt(r.nom), t: txt(r.type), r: txt(r.role) })),
+    RAW, AGE, POPAGE, SV, PATRI, JUSTICE, PUB: L("acteurs_publics").map((r) => ({ n: txt(r.nom), t: txt(r.type), r: txt(r.role) })),
     C27: C["2027"] || {}, POPC, POPN, ERAS, VOTE, AN, MTYPE, MOWN, PARAM, couleurDuel,
     TVAGE: L("audience_age").map((r) => [txt(r.chaine), num(r.age_moyen), oui(r.chaine_info) ? "i" : "g"]),
   };
