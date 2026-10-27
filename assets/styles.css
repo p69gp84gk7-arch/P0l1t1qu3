@@ -163,3 +163,9 @@ h2.sec{font-size:1.3rem;margin:30px 0 4px}
 .chargement.erreur .roue{display:none}
 @keyframes tourne{to{transform:rotate(360deg)}}
 .etat-donnees{border-top:1px solid var(--line);padding-top:12px}
+.patri{list-style:none;margin:14px 0 0;padding:0}
+.patri li{display:grid;grid-template-columns:1.6em 10px 1fr;gap:8px;align-items:start;padding:9px 0;border-top:1px solid var(--line)}
+.patri .rg{font-weight:700;color:var(--muted);text-align:right}
+.patri i{width:10px;height:10px;border-radius:50%;margin-top:.45em}
+.patri .tt{font-weight:700;white-space:nowrap}
+.patri .dt{font-size:.85rem;color:var(--muted)}

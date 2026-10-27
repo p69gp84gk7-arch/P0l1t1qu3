@@ -52,3 +52,51 @@ test("mise à jour du script : refuse des fichiers incomplets", () => {
   assert.equal(ctx.scriptFichiersValides([ok[0], { name: "Code", source: "404: Not Found ......................" }]), false);
   assert.equal(ctx.scriptFichiersValides([{ name: "appsscript", source: "<html>" }, ok[1]]), false);
 });
+
+test("la mise à jour du script récupère tous les fichiers du projet", () => {
+  const ctx = {};
+  vm.createContext(ctx);
+  vm.runInContext(lire("MiseAJourScript.gs") + ";globalThis.L = FICHIERS_SCRIPT;", ctx);
+  const noms = ctx.L.map((f) => f.chemin.replace("apps-script/", ""));
+  for (const f of [...FICHIERS, "appsscript.json"]) assert.ok(noms.includes(f), f);
+});
+
+const patrimoine = () => {
+  const ctx = {};
+  vm.createContext(ctx);
+  vm.runInContext(lire("Wikipedia.gs") + "\n" + lire("Patrimoine.gs"), ctx);
+  return ctx;
+};
+
+test("patrimoine : montants calculés depuis une déclaration XML de la HATVP", () => {
+  const ctx = patrimoine();
+  const r = ctx.patrimoineDepuisXml(fs.readFileSync(new URL("fixtures/hatvp-dsp.xml", import.meta.url), "utf8"));
+  // 50 % de 400 000 + 200 000 (le terrain vendu est exclu) + 10 000 + 25 000 + 1 500 - 500 + 8 000
+  assert.equal(r.patrimoine, 444000);
+  assert.equal(r.dettes, 122501);
+  assert.deepEqual({ ...ctx.patrimoineDepuisXml("<declaration/>") }, { patrimoine: 0, dettes: 0 });
+});
+
+test("patrimoine : repère les déclarations des candidats dans la liste de la HATVP", () => {
+  const ctx = patrimoine();
+  const csv = [
+    "civilite;prenom;nom;classement;type_mandat;qualite;type_document;departement;date_publication;date_depot;nom_fichier;url_dossier;open_data;statut_publication;id_origine;url_photo",
+    "M.;Emmanuel;MACRON;x;president;Président de la République;dsp;;2022-05-16;2022-03-01;macron.pdf;/pages_nominatives/macron-emmanuel;;Livrée;;",
+    "Mme;Marine;LE PEN;x;candidat;Candidate à l'élection présidentielle;dsp;;2027-03-10;2027-03-01;le-pen.pdf;/pages_nominatives/le-pen-marine;le-pen.xml;Livrée;;",
+    "M.;Jean;DUPONT-AIGNAN;x;autre;Candidat à l'élection présidentielle;dsp;;2027-03-10;;nda.pdf;/p;;Livrée;;",
+    "M.;Fabrice;ROUSSEL;x;depute;Député de la Loire-Atlantique;dsp;44;2027-02-01;;roussel.pdf;/p;roussel.xml;Livrée;;",
+    "M.;Paul;MARTIN;x;candidat;Candidat à l'élection présidentielle;di;;2027-03-10;;di.pdf;/p;;Livrée;;",
+  ].join("\n");
+  const d = ctx.hatvpDeclarationsCandidats(ctx.hatvpCsv(csv), "2027-01-01");
+  assert.deepEqual([...d.map((r) => r.nom)], ["LE PEN", "DUPONT-AIGNAN"]);
+  assert.equal(d[0].open_data, "le-pen.xml");
+  assert.equal(ctx.patrimoineNomPropre("DUPONT-AIGNAN"), "Dupont-Aignan");
+  assert.equal(ctx.patrimoineNomPropre("LE PEN"), "Le Pen");
+  const candidats = [
+    { election: "2027", cle: "rn", nom: "Le Pen / Bardella", nom_court: "Le Pen", alias_wikipedia: "Le Pen;Bardella" },
+    { election: "2027", cle: "melenchon", nom: "Mélenchon", nom_court: "", alias_wikipedia: "Mélenchon" },
+  ];
+  assert.equal(ctx.patrimoineCle(candidats, "2027", "LE PEN"), "rn");
+  assert.equal(ctx.patrimoineCle(candidats, "2027", "MELENCHON"), "melenchon");
+  assert.equal(ctx.patrimoineCle(candidats, "2027", "VILLEPIN"), "villepin");
+});

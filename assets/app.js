@@ -1,6 +1,6 @@
 /* Application : rendu des onglets à partir des données chargées (voir donnees.js). */
 function lancerApplication(D){
-const {RAW,AGE,POPAGE,SV,PUB,C27,POPC,POPN,ERAS,TVAGE,AN,VOTE,MTYPE,MOWN,PARAM,couleurDuel}=D;
+const {RAW,AGE,POPAGE,SV,PATRI,PUB,C27,POPC,POPN,ERAS,TVAGE,AN,VOTE,MTYPE,MOWN,PARAM,couleurDuel}=D;
 const POS=["Gauche radicale","Gauche","Centre-gauche","Centre","Centre-droit","Droite","Droite conserv. / identitaire"];
 const POSC=["#9F1239","#E11D48","#F472B6","#A78BFA","#60A5FA","#2563EB","#1E3A8A"];
 const TYPES=["TV","Radio","Presse","Magazine","En ligne"];
@@ -581,6 +581,40 @@ function renderLinks(){
   svg.querySelectorAll(".node").forEach(g=>{g.onclick=()=>pick(g.dataset.n);g.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pick(g.dataset.n);}};});
   list(null);
 }
+/* ================= Patrimoine ================= */
+const eur=v=>v==null?"–":Math.abs(v)>=1e6?(v/1e6).toLocaleString("fr-FR",{maximumFractionDigits:2})+" M€":Math.round(v).toLocaleString("fr-FR")+" €";
+function renderPatri(){
+  killCharts(["patri"]);
+  const box=document.getElementById("patriBox"),L=PATRI[Y]||[],chiffres=L.filter(x=>x.total!=null),sans=L.filter(x=>x.total==null);
+  const coul=k=>(ERA.C[k]&&ERA.C[k].c)||"#64748B",r1=k=>ERA.results&&ERA.results.r1[k]!=null?`1<sup>er</sup> tour : ${fmt(ERA.results.r1[k])} %`:"";
+  const sources=[...new Set(L.map(x=>x.lien?`<a href="${esc(x.lien)}" target="_blank" rel="noopener">${esc(x.src)}</a>`:esc(x.src)).filter(Boolean))].join("<br>");
+  let h=`<h2>Le patrimoine des candidats en ${Y}</h2>`;
+  if(chiffres.length){
+    h+=`<p class="lede">Classement sur le total : patrimoine déclaré (immobilier, comptes, placements, véhicules…) plus la fortune estimée hors de la déclaration quand la presse en a publié une estimation. Les dettes sont indiquées à part et ne changent pas le classement.</p>
+      <div class="bars-box" style="height:${chiffres.length*34+80}px"><canvas aria-label="Classement du patrimoine des candidats"></canvas></div>`;
+  }else if(sans.some(x=>x.rang!=null)){
+    h+=`<p class="lede">Les déclarations de ${Y} ne sont plus en ligne et la presse n’en a pas publié les totaux : voici l’ordre publié, du patrimoine déclaré le plus élevé au plus faible, avec les montants connus.</p>`;
+  }else{
+    h+=`<p class="lede">Pas encore de déclaration publiée pour ${Y}. Les candidats la déposent avec leurs parrainages ; la HATVP la publie au moins 15 jours avant le premier tour. Le classement se remplit alors tout seul : le Google Sheet vérifie les publications de la HATVP toutes les 6 heures.</p>`;
+  }
+  if(L.length){
+    let i=0;
+    h+=`<ol class="patri">${L.map(x=>{const n=x.total!=null||x.rang!=null?++i:"";
+      const det=x.total!=null?[`patrimoine déclaré ${eur(x.p)}`,x.f?`fortune estimée ${eur(x.f)}`:"",x.d!=null?`dettes ${eur(x.d)}`:"",x.d!=null?`net ${eur(x.net)}`:""].filter(Boolean).join(" · "):"";
+      return `<li><span class="rg">${n}</span><i style="background:${coul(x.cle)}"></i><div><b>${esc(x.nom)}</b>${x.total!=null?` <span class="tt">${eur(x.total)}</span>`:""}<div class="dt">${[det,r1(x.cle)].filter(Boolean).join(" · ")}</div>${x.com?`<div class="dt">${esc(x.com)}</div>`:""}</div></li>`;}).join("")}</ol>`;
+  }
+  if(sources)h+=`<p class="hint">Sources : ${sources}</p>`;
+  box.innerHTML=h;
+  if(chiffres.length){
+    const txt=cssVar("--muted"),grid=cssVar("--line");
+    CH.patri=new Chart(box.querySelector("canvas"),{type:"bar",data:{labels:chiffres.map(x=>x.nom),datasets:[
+        {label:"Patrimoine déclaré",data:chiffres.map(x=>x.p),backgroundColor:chiffres.map(x=>coul(x.cle)),borderRadius:3},
+        {label:"Fortune estimée hors déclaration",data:chiffres.map(x=>x.f||0),backgroundColor:chiffres.map(x=>coul(x.cle)+"66"),borderRadius:3}]},
+      options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:"index",intersect:false},
+        plugins:{legend:{position:"bottom",labels:{color:txt,boxWidth:10,font:{size:11}}},tooltip:{filter:it=>it.parsed.x>0,callbacks:{label:it=>`${it.dataset.label} : ${eur(it.parsed.x)}`,footer:its=>`Total : ${eur(chiffres[its[0].dataIndex].total)}`}}},
+        scales:{x:{stacked:true,grid:{color:grid},ticks:{color:txt,callback:v=>v>=1e6?v/1e6+" M€":v>0?v/1e3+" k€":"0"}},y:{stacked:true,grid:{display:false},ticks:{color:cssVar("--ink"),font:{size:11}}}}}});
+  }
+}
 /* ================= Navigation ================= */
 let TAB="sondages";
 function updHash(){try{history.replaceState(null,"","#"+TAB+"-"+Y);}catch(e){}}
@@ -588,7 +622,7 @@ function setEra(y,fromLoad){
   Y=y;ERA=ERAS[y];visible=new Set(ERA.visible);killCharts();
   document.getElementById("title").textContent=ERA.title;document.getElementById("eraSub").textContent=ERA.sub;
   document.querySelectorAll(".timewarp button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.y===y)));
-  renderPolls();renderAgeVote();renderPop();renderAgePop();renderInst();renderMedia();renderAgeMedia();renderLinks();renderAN();renderCompare();renderCit();if(!fromLoad)updHash();
+  renderPolls();renderAgeVote();renderPop();renderAgePop();renderInst();renderMedia();renderAgeMedia();renderLinks();renderAN();renderCompare();renderCit();renderPatri();if(!fromLoad)updHash();
 }
 document.querySelectorAll(".timewarp button").forEach(b=>b.onclick=()=>{setEra(b.dataset.y);});
 const TABS=[...document.querySelectorAll('[role="tab"]')];
@@ -598,7 +632,7 @@ TABS.forEach(b=>b.onclick=()=>showTab(b.getAttribute("aria-controls"),true));
 /* ================= Démarrage ================= */
 (function start(){
   const h=(location.hash||"").slice(1).split("-");let y="2027",t="sondages";
-  if(["sondages","popularite","assemblee","comparer","citations","instituts","medias","liens"].includes(h[0]))t=h[0];if(ERAS[h[1]])y=h[1];
+  if(["sondages","popularite","assemblee","comparer","patrimoine","citations","instituts","medias","liens"].includes(h[0]))t=h[0];if(ERAS[h[1]])y=h[1];
   setEra(y,true);showTab(t,false);
   if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>setEra(Y,true));
 })();
