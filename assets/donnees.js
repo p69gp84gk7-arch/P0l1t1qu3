@@ -272,8 +272,19 @@ function construireModele(json) {
     }
   }
 
+  /* financement des campagnes : comptes arrêtés par la CNCCFP (2017, 2022), ressources des partis (2027) */
+  const FINANCE = {};
+  for (const [y, rs] of grouper(L("financement"), "election")) {
+    FINANCE[y] = rs.filter((r) => txt(r.cle)).map((r) => ({
+      cle: txt(r.cle), nom: txt(r.nom), parti: txt(r.parti), depenses: num(r.depenses), recettes: num(r.recettes),
+      apport: num(r.apport_personnel), versements: num(r.versements_partis), contributions: num(r.contributions_partis), dons: num(r.dons),
+      autres: num(r.autres_recettes), concours: num(r.concours_nature), etat: num(r.remboursement_etat),
+      preteur: txt(r.preteur), com: txt(r.commentaire), src: txt(r.source), lien: txt(r.lien),
+    })).sort((a, b) => (b.depenses ?? -1) - (a.depenses ?? -1));
+  }
+
   return {
-    RAW, AGE, POPAGE, SV, PATRI, JUSTICE, PUB: L("acteurs_publics").map((r) => ({ n: txt(r.nom), t: txt(r.type), r: txt(r.role) })),
+    RAW, AGE, POPAGE, SV, PATRI, JUSTICE, FINANCE, PUB: L("acteurs_publics").map((r) => ({ n: txt(r.nom), t: txt(r.type), r: txt(r.role) })),
     C27: C["2027"] || {}, POPC, POPN, ERAS, VOTE, AN, MTYPE, MOWN, PARAM, couleurDuel,
     TVAGE: L("audience_age").map((r) => [txt(r.chaine), num(r.age_moyen), oui(r.chaine_info) ? "i" : "g"]),
   };

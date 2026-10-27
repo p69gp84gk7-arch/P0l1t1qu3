@@ -139,3 +139,19 @@ test("justice : affaires rattachées aux candidats de chaque élection", () => {
     assert.ok(a.src && a.lien && /^\d{4}-\d\d-\d\d$/.test(a.date), a.id);
   }
 });
+
+test("financement : comptes de campagne 2017 et 2022 cohérents", () => {
+  for (const y of ["2017", "2022"]) {
+    const F = M.FINANCE[y];
+    assert.equal(F.length, y === "2017" ? 11 : 12);
+    for (const f of F) {
+      const somme = f.apport + f.versements + f.contributions + f.dons + f.autres + f.concours;
+      assert.ok(Math.abs(somme - f.recettes) <= 1, `${y} ${f.nom} : ${somme} contre ${f.recettes}`);
+      assert.ok(f.etat > 0 && f.etat <= f.depenses, `${y} ${f.nom}`);
+      assert.ok(M.ERAS[y].results.r1[f.cle] != null, `${y} ${f.cle} absent des résultats`);
+    }
+  }
+  assert.equal(M.FINANCE["2022"][0].cle, "macron"); // tri par dépenses
+  assert.ok(M.FINANCE["2027"].every((f) => f.depenses === null && f.com));
+  assert.ok(M.JUSTICE["2022"].lepen.some((a) => a.id === "lepen-campagne-2022"));
+});
