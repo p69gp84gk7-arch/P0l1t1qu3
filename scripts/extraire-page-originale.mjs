@@ -5,6 +5,7 @@
 // Usage : node scripts/extraire-page-originale.mjs [archive/page-originale.html] [data/snapshot.json]
 import fs from "node:fs";
 import { ENTETE_PATRIMOINE, LIGNES_PATRIMOINE } from "./patrimoine-initial.mjs";
+import { ENTETE_JUSTICE, LIGNES_JUSTICE } from "./justice-initial.mjs";
 import vm from "node:vm";
 
 const src = process.argv[2] || "archive/page-originale.html";
@@ -129,6 +130,10 @@ for (const y of YEARS) {
 /* ---- patrimoine des candidats ---- */
 tab("patrimoine", ENTETE_PATRIMOINE);
 for (const r of LIGNES_PATRIMOINE) add("patrimoine", r);
+
+/* ---- affaires judiciaires ---- */
+tab("justice", ENTETE_JUSTICE);
+for (const r of LIGNES_JUSTICE) add("justice", r);
 
 /* ---- Assemblée ---- */
 tab("assemblee", ["date_cle", "libelle", "description", "vacants"]);

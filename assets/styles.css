@@ -177,3 +177,23 @@ h2.sec{font-size:1.3rem;margin:30px 0 4px}
 .patri .dt{font-size:.85rem;color:var(--muted)}
 .patri details{font-size:.85rem;margin-top:2px}
 .patri summary{cursor:pointer;color:var(--accent)}
+.jlist{margin-top:14px}
+.jc{border-top:1px solid var(--line);padding:12px 0}
+.jh{display:flex;align-items:center;gap:8px}
+.jh i{width:10px;height:10px;border-radius:50%;flex:none}
+.jh h3{font-size:1.05rem}
+.jc .dt,.affs .dt{font-size:.85rem;color:var(--muted)}
+.affs{list-style:none;margin:8px 0 0;padding:0}
+.aff{background:var(--soft);border-radius:8px;padding:9px 11px;margin-top:8px;font-size:.92rem}
+.aff .ah{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:3px}
+.aff .badge{color:#fff;font-size:.72rem;font-weight:700;border-radius:999px;padding:1px 8px}
+.aff .tag{font-size:.72rem;border:1px solid var(--line);border-radius:999px;padding:0 7px;color:var(--muted)}
+.aff .pn{display:flex;flex-wrap:wrap;gap:4px 10px;margin:3px 0;font-size:.85rem;font-weight:600}
+.aff details{margin-top:4px;font-size:.85rem}
+.jc details.closed{margin-top:6px;font-size:.9rem}
+.aff summary,.jc details.closed>summary{cursor:pointer;color:var(--accent)}
+.aff details p{margin:.3rem 0}
+.jb{margin:6px 0 0;font-size:.86rem}
+.jb div{padding:2px 0}
+.jb dt{color:var(--muted);font-weight:600}
+.jb dd{margin:0}
