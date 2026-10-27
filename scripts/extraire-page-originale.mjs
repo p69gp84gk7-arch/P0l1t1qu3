@@ -4,6 +4,7 @@
 //
 // Usage : node scripts/extraire-page-originale.mjs [archive/page-originale.html] [data/snapshot.json]
 import fs from "node:fs";
+import { ENTETE_PATRIMOINE, LIGNES_PATRIMOINE } from "./patrimoine-initial.mjs";
 import vm from "node:vm";
 
 const src = process.argv[2] || "archive/page-originale.html";
@@ -125,6 +126,10 @@ for (const y of YEARS) {
   A.groups.forEach((g, i) => add("inscrits_age", [y, g, INSCRITS_AGE[i], A.abst[i], Math.round(poids[i] / total * 1000) / 10]));
 }
 
+/* ---- patrimoine des candidats ---- */
+tab("patrimoine", ENTETE_PATRIMOINE);
+for (const r of LIGNES_PATRIMOINE) add("patrimoine", r);
+
 /* ---- Assemblée ---- */
 tab("assemblee", ["date_cle", "libelle", "description", "vacants"]);
 tab("assemblee_groupes", ["date_cle", "sigle", "nom", "sieges", "couleur", "famille", "president", "position"]);
@@ -197,7 +202,10 @@ add("parametres",
   ["citations_fin", iso(CIT_END)],
   ["sondages_2027_depuis", "2026-02-20"],
   ["maj_script", "oui"],
-  ["script_branche", "main"]);
+  ["script_branche", "main"],
+  ["maj_patrimoine", "oui"],
+  ["patrimoine_election", "2027"],
+  ["patrimoine_depuis", "2027-01-01"]);
 tab("journal", ["date", "action", "details"]);
 add("journal", ["2026-10-23", "import initial", "Données reprises de la page d’origine"]);
 

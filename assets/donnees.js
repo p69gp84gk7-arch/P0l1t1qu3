@@ -240,8 +240,24 @@ function construireModele(json) {
   const MTYPE = {}, MOWN = {};
   for (const r of L("medias_infos")) { if (r.type) MTYPE[txt(r.media)] = txt(r.type); if (r.proprietaire) MOWN[txt(r.media)] = txt(r.proprietaire); }
 
+  /* patrimoine : classement sur patrimoine déclaré + fortune estimée hors déclaration */
+  const PATRI = {};
+  for (const [y, rs] of grouper(L("patrimoine"), "election")) {
+    const l = rs.filter((r) => txt(r.nom) || txt(r.cle)).map((r) => {
+      const p = num(r.patrimoine), f = num(r.fortune_estimee), d = num(r.dettes);
+      return {
+        cle: txt(r.cle), nom: txt(r.nom) || txt(r.cle), p, f, d, total: p === null ? null : p + (f || 0), net: p === null ? null : p - (d || 0),
+        rang: num(r.rang_publie), src: txt(r.source), lien: txt(r.lien), com: txt(r.commentaire),
+      };
+    });
+    // d'abord les montants connus (du plus élevé au plus faible), puis l'ordre publié, puis le reste
+    l.sort((a, b) => (a.total === null) - (b.total === null) || (b.total ?? 0) - (a.total ?? 0) ||
+      (a.rang === null) - (b.rang === null) || (a.rang ?? 0) - (b.rang ?? 0) || a.nom.localeCompare(b.nom, "fr"));
+    PATRI[y] = l;
+  }
+
   return {
-    RAW, AGE, POPAGE, SV, PUB: L("acteurs_publics").map((r) => ({ n: txt(r.nom), t: txt(r.type), r: txt(r.role) })),
+    RAW, AGE, POPAGE, SV, PATRI, PUB: L("acteurs_publics").map((r) => ({ n: txt(r.nom), t: txt(r.type), r: txt(r.role) })),
     C27: C["2027"] || {}, POPC, POPN, ERAS, VOTE, AN, MTYPE, MOWN, PARAM, couleurDuel,
     TVAGE: L("audience_age").map((r) => [txt(r.chaine), num(r.age_moyen), oui(r.chaine_info) ? "i" : "g"]),
   };

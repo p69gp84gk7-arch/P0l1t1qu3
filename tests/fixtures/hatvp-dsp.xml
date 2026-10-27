@@ -1,0 +1,22 @@
+<declaration>
+  <general><typeDeclaration><id>DSP</id></typeDeclaration></general>
+  <immeubleDto>
+    <items>
+      <items><motif><id>CREATION</id><label/></motif><nature>Appartement</nature><quotePart>50.0</quotePart><valeurVenale>400000</valeurVenale></items>
+      <items><motif><id>CREATION</id><label/></motif><nature>Maison</nature><quotePart>100.0</quotePart><valeurVenale>200000</valeurVenale></items>
+      <items><motif><id>CREATION</id><label/></motif><nature>Terrain vendu</nature><conservee>false</conservee><quotePart>100.0</quotePart><valeurVenale>90000</valeurVenale></items>
+    </items>
+    <neant>false</neant>
+  </immeubleDto>
+  <sciDto><items/><neant>true</neant></sciDto>
+  <valeursNonEnBourseDto><items><items><valeurActuelle>10000</valeurActuelle><participation>50.0</participation></items></items></valeursNonEnBourseDto>
+  <assuranceVieDto><items><items><valeurRachat>25 000</valeurRachat></items></items></assuranceVieDto>
+  <comptesBancaireDto><items><items><valeur>1500</valeur></items><items><valeur>-500</valeur></items></items></comptesBancaireDto>
+  <vehiculeDto><items><items><valeurAchat>20000</valeurAchat><valeur>8000</valeur></items></items></vehiculeDto>
+  <passifDto>
+    <items>
+      <items><montant>300000</montant><restantDu>120000</restantDu></items>
+      <items><montant>10000</montant><restantDu>2500,5</restantDu></items>
+    </items>
+  </passifDto>
+</declaration>

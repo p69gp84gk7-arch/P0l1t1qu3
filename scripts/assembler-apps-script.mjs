@@ -3,7 +3,7 @@
 // Usage : node scripts/assembler-apps-script.mjs
 import fs from "node:fs";
 
-export const FICHIERS = ["Code.gs", "Wikipedia.gs", "MiseAJourScript.gs"];
+export const FICHIERS = ["Code.gs", "Wikipedia.gs", "MiseAJourScript.gs", "Patrimoine.gs"];
 const lire = (f) => fs.readFileSync(new URL(`../apps-script/${f}`, import.meta.url), "utf8");
 const entete = "/* Fichier généré par scripts/assembler-apps-script.mjs : à coller tel quel dans Extensions > Apps Script.\n   Pour modifier le code, éditer les fichiers .gs séparés puis relancer le script. */\n\n";
 

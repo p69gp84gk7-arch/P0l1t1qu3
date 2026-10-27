@@ -108,3 +108,16 @@ test("part des votants par âge : inscrits × participation, ramenée à 100", (
   assert.deepEqual(plain(M.AGE["2022"].votants.votants), [8.7, 10.6, 23.6, 17.8, 18.4, 20.8]);
   assert.equal(M.AGE["2027"].votants, null);
 });
+
+test("patrimoine : classement par année sur patrimoine déclaré + fortune estimée", () => {
+  const p22 = M.PATRI["2022"];
+  assert.equal(p22.length, 12);
+  assert.deepEqual([...p22.slice(0, 3).map((x) => x.cle)], ["lr", "zemmour", "nda"]);
+  assert.equal(p22[0].total, 6187432 + 2200000);
+  for (let i = 1; i < p22.length; i++) assert.ok(p22[i - 1].total >= p22[i].total);
+  assert.equal(p22.find((x) => x.cle === "lepen").net, 2005980 - 10869681);
+  const p17 = M.PATRI["2017"];
+  assert.deepEqual([...p17.map((x) => x.rang)], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+  assert.ok(p17.every((x) => x.total === null && x.com));
+  assert.equal(M.PATRI["2027"], undefined);
+});

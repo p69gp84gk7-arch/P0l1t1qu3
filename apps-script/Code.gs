@@ -4,7 +4,8 @@
  * 1. API : publié comme application web, il renvoie tous les onglets en JSON
  *    (c'est ce que lit l'application web). Le classeur lui-même peut rester privé.
  * 2. Mise à jour automatique : toutes les 6 heures, il lit la page Wikipédia des
- *    sondages 2027 et ajoute les nouveaux sondages (1er et 2nd tour) dans le classeur.
+ *    sondages 2027 et ajoute les nouveaux sondages (1er et 2nd tour) dans le classeur,
+ *    puis vérifie si la HATVP a publié les déclarations de patrimoine des candidats (Patrimoine.gs).
  *
  * Installation : voir README.md, section « Mise en place ».
  */
@@ -22,6 +23,7 @@ var CACHE_CLE = "api-v1", CACHE_DUREE = 600, CACHE_MORCEAU = 90000;
 function onOpen() {
   SpreadsheetApp.getUi().createMenu("Sondages")
     .addItem("Mettre à jour depuis Wikipédia", "miseAJourManuelle")
+    .addItem("Vérifier les déclarations de patrimoine (HATVP)", "patrimoineMiseAJourManuelle")
     .addItem("Activer la mise à jour automatique (toutes les 6 h)", "installerDeclencheur")
     .addItem("Désactiver la mise à jour automatique", "supprimerDeclencheurs")
     .addSeparator()
@@ -119,8 +121,9 @@ function miseAJourManuelle() {
 
 /** Appelée par le déclencheur. Ne fait rien si le paramètre maj_auto vaut « non ». */
 function miseAJourAuto() {
-  if (String(parametre("maj_auto") || "oui").toLowerCase() === "non") return;
-  miseAJour();
+  if (String(parametre("maj_auto") || "oui").toLowerCase() !== "non") miseAJour();
+  // Patrimoine.gs peut manquer pendant la nuit qui suit son ajout (il arrive à la mise à jour suivante du script).
+  if (typeof patrimoineMiseAJourAuto === "function") patrimoineMiseAJourAuto();
 }
 
 function miseAJour() {
