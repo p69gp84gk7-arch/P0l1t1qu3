@@ -246,7 +246,7 @@ function construireModele(json) {
     const l = rs.filter((r) => txt(r.nom) || txt(r.cle)).map((r) => {
       const p = num(r.patrimoine), f = num(r.fortune_estimee), d = num(r.dettes);
       return {
-        cle: txt(r.cle), nom: txt(r.nom) || txt(r.cle), p, f, d, total: p === null ? null : p + (f || 0), net: p === null ? null : p - (d || 0),
+        cle: txt(r.cle), nom: txt(r.nom) || txt(r.cle), p, f, d, total: p === null ? null : p + (f || 0), net: p === null || d === null ? null : p - d,
         rang: num(r.rang_publie), src: txt(r.source), lien: txt(r.lien), com: txt(r.commentaire),
       };
     });

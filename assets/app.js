@@ -582,7 +582,7 @@ function renderLinks(){
   list(null);
 }
 /* ================= Patrimoine ================= */
-const eur=v=>v==null?"–":Math.abs(v)>=1e6?(v/1e6).toLocaleString("fr-FR",{maximumFractionDigits:2})+" M€":Math.round(v).toLocaleString("fr-FR")+" €";
+const eur=v=>v==null?"–":(v<0?"−":"")+(Math.abs(v)>=1e6?(Math.abs(v)/1e6).toLocaleString("fr-FR",{maximumFractionDigits:2})+"\u00a0M€":Math.round(Math.abs(v)).toLocaleString("fr-FR")+"\u00a0€");
 function renderPatri(){
   killCharts(["patri"]);
   const box=document.getElementById("patriBox"),L=PATRI[Y]||[],chiffres=L.filter(x=>x.total!=null),sans=L.filter(x=>x.total==null);
@@ -591,7 +591,8 @@ function renderPatri(){
   let h=`<h2>Le patrimoine des candidats en ${Y}</h2>`;
   if(chiffres.length){
     h+=`<p class="lede">Classement sur le total : patrimoine déclaré (immobilier, comptes, placements, véhicules…) plus la fortune estimée hors de la déclaration quand la presse en a publié une estimation. Les dettes sont indiquées à part et ne changent pas le classement.</p>
-      <div class="bars-box" style="height:${chiffres.length*34+80}px"><canvas aria-label="Classement du patrimoine des candidats"></canvas></div>`;
+      <div class="bars-box" style="height:${chiffres.length*34+80}px"><canvas aria-label="Classement du patrimoine des candidats"></canvas></div>
+      <p class="hint">Touchez « Détail » sous un candidat pour voir ce que contient sa déclaration.</p>`;
   }else if(sans.some(x=>x.rang!=null)){
     h+=`<p class="lede">Les déclarations de ${Y} ne sont plus en ligne et la presse n’en a pas publié les totaux : voici l’ordre publié, du patrimoine déclaré le plus élevé au plus faible, avec les montants connus.</p>`;
   }else{
@@ -599,9 +600,10 @@ function renderPatri(){
   }
   if(L.length){
     let i=0;
+    const ligne=(t,v,c="")=>`<div${c?` class="${c}"`:""}><dt>${t}</dt><dd>${v}</dd></div>`;
     h+=`<ol class="patri">${L.map(x=>{const n=x.total!=null||x.rang!=null?++i:"";
-      const det=x.total!=null?[`patrimoine déclaré ${eur(x.p)}`,x.f?`fortune estimée ${eur(x.f)}`:"",x.d!=null?`dettes ${eur(x.d)}`:"",x.d!=null?`net ${eur(x.net)}`:""].filter(Boolean).join(" · "):"";
-      return `<li><span class="rg">${n}</span><i style="background:${coul(x.cle)}"></i><div><b>${esc(x.nom)}</b>${x.total!=null?` <span class="tt">${eur(x.total)}</span>`:""}<div class="dt">${[det,r1(x.cle)].filter(Boolean).join(" · ")}</div>${x.com?`<div class="dt">${esc(x.com)}</div>`:""}</div></li>`;}).join("")}</ol>`;
+      const det=x.total==null?"":`<dl class="mt">${ligne("Patrimoine déclaré",eur(x.p))}${x.f?ligne("Fortune estimée",eur(x.f)):""}${ligne("Dettes",x.d==null?"non publiées":eur(x.d))}${x.net!=null?ligne("Net (après dettes)",eur(x.net),x.net<0?"neg":""):""}</dl>`;
+      return `<li><span class="rg">${n}</span><i style="background:${coul(x.cle)}"></i><div class="c"><div class="hd"><b>${esc(x.nom)}</b>${x.total!=null?`<span class="tt">${eur(x.total)}</span>`:""}</div>${det}${r1(x.cle)?`<div class="dt">${r1(x.cle)}</div>`:""}${x.com?`<details><summary>Détail</summary><div class="dt">${esc(x.com)}</div></details>`:""}</div></li>`;}).join("")}</ol>`;
   }
   if(sources)h+=`<p class="hint">Sources : ${sources}</p>`;
   box.innerHTML=h;
@@ -609,7 +611,7 @@ function renderPatri(){
     const txt=cssVar("--muted"),grid=cssVar("--line");
     CH.patri=new Chart(box.querySelector("canvas"),{type:"bar",data:{labels:chiffres.map(x=>x.nom),datasets:[
         {label:"Patrimoine déclaré",data:chiffres.map(x=>x.p),backgroundColor:chiffres.map(x=>coul(x.cle)),borderRadius:3},
-        {label:"Fortune estimée hors déclaration",data:chiffres.map(x=>x.f||0),backgroundColor:chiffres.map(x=>coul(x.cle)+"66"),borderRadius:3}]},
+        ...(chiffres.some(x=>x.f)?[{label:"Fortune estimée hors déclaration",data:chiffres.map(x=>x.f||0),backgroundColor:chiffres.map(x=>coul(x.cle)+"66"),borderRadius:3}]:[])]},
       options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:"index",intersect:false},
         plugins:{legend:{position:"bottom",labels:{color:txt,boxWidth:10,font:{size:11}}},tooltip:{filter:it=>it.parsed.x>0,callbacks:{label:it=>`${it.dataset.label} : ${eur(it.parsed.x)}`,footer:its=>`Total : ${eur(chiffres[its[0].dataIndex].total)}`}}},
         scales:{x:{stacked:true,grid:{color:grid},ticks:{color:txt,callback:v=>v>=1e6?v/1e6+" M€":v>0?v/1e3+" k€":"0"}},y:{stacked:true,grid:{display:false},ticks:{color:cssVar("--ink"),font:{size:11}}}}}});
