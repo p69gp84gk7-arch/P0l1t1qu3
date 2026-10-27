@@ -164,8 +164,16 @@ h2.sec{font-size:1.3rem;margin:30px 0 4px}
 @keyframes tourne{to{transform:rotate(360deg)}}
 .etat-donnees{border-top:1px solid var(--line);padding-top:12px}
 .patri{list-style:none;margin:14px 0 0;padding:0}
-.patri li{display:grid;grid-template-columns:1.6em 10px 1fr;gap:8px;align-items:start;padding:9px 0;border-top:1px solid var(--line)}
+.patri li{display:grid;grid-template-columns:1.6em 10px minmax(0,1fr);gap:8px;align-items:start;padding:10px 0;border-top:1px solid var(--line)}
 .patri .rg{font-weight:700;color:var(--muted);text-align:right}
-.patri i{width:10px;height:10px;border-radius:50%;margin-top:.45em}
-.patri .tt{font-weight:700;white-space:nowrap}
+.patri li>i{width:10px;height:10px;border-radius:50%;margin-top:.5em}
+.patri .hd{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.patri .tt{font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums}
+.patri .mt{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:1px 18px;margin:4px 0 2px;font-size:.86rem}
+.patri .mt div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dotted var(--line);padding:1px 0}
+.patri .mt dt{color:var(--muted)}
+.patri .mt dd{margin:0;white-space:nowrap;font-variant-numeric:tabular-nums}
+.patri .mt .neg dd{color:var(--down)}
 .patri .dt{font-size:.85rem;color:var(--muted)}
+.patri details{font-size:.85rem;margin-top:2px}
+.patri summary{cursor:pointer;color:var(--accent)}

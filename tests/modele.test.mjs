@@ -117,7 +117,10 @@ test("patrimoine : classement par année sur patrimoine déclaré + fortune esti
   for (let i = 1; i < p22.length; i++) assert.ok(p22[i - 1].total >= p22[i].total);
   assert.equal(p22.find((x) => x.cle === "lepen").net, 2005980 - 10869681);
   const p17 = M.PATRI["2017"];
-  assert.deepEqual([...p17.map((x) => x.rang)], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
-  assert.ok(p17.every((x) => x.total === null && x.com));
+  assert.equal(p17.length, 11);
+  assert.ok(p17.every((x) => x.total > 0 && x.com));
+  assert.deepEqual([...p17.slice(0, 3).map((x) => x.cle)], ["nda", "asselineau", "melenchon"]);
+  assert.equal(p17.find((x) => x.cle === "melenchon").net, null); // dettes non publiées
+  assert.equal(p17.find((x) => x.cle === "lr").net, 974888 - 80000);
   assert.equal(M.PATRI["2027"], undefined);
 });

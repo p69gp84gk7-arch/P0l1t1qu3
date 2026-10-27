@@ -105,7 +105,7 @@ npm test    # tests du parseur Wikipédia et de la conversion des onglets
 | `apps-script/Patrimoine.gs` | repère les déclarations de patrimoine des candidats publiées par la HATVP et calcule les montants depuis le XML |
 | `apps-script/Wikipedia.gs` | lecture des tableaux de sondages Wikipédia (fonctions pures, testées sous Node) |
 | `scripts/extraire-page-originale.mjs` | extrait les données de la page d’origine (`archive/`) vers `data/snapshot.json` |
-| `scripts/patrimoine-initial.mjs` | patrimoine déclaré des candidats 2017 et 2022 (sources dans le fichier) |
+| `scripts/patrimoine-initial.mjs` | patrimoine déclaré des candidats 2017 et 2022 (sources et méthode dans le fichier) |
 | `scripts/importer-wikipedia.mjs` | applique la même mise à jour Wikipédia au fichier de secours |
 
 Mettre à jour le fichier de secours : `node scripts/importer-wikipedia.mjs`, ou le remplacer par la réponse de l’API (`curl -L "$API_URL" > data/snapshot.json`).
