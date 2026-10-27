@@ -1,6 +1,6 @@
 /* Application : rendu des onglets à partir des données chargées (voir donnees.js). */
 function lancerApplication(D){
-const {RAW,AGE,POPAGE,SV,PATRI,JUSTICE,PUB,C27,POPC,POPN,ERAS,TVAGE,AN,VOTE,MTYPE,MOWN,PARAM,couleurDuel}=D;
+const {RAW,AGE,POPAGE,SV,PATRI,JUSTICE,FINANCE,PUB,C27,POPC,POPN,ERAS,TVAGE,AN,VOTE,MTYPE,MOWN,PARAM,couleurDuel}=D;
 const POS=["Gauche radicale","Gauche","Centre-gauche","Centre","Centre-droit","Droite","Droite conserv. / identitaire"];
 const POSC=["#9F1239","#E11D48","#F472B6","#A78BFA","#60A5FA","#2563EB","#1E3A8A"];
 const TYPES=["TV","Radio","Presse","Magazine","En ligne"];
@@ -672,6 +672,37 @@ function renderJustice(){
         plugins:{legend:{position:"bottom",labels:{color:txt,boxWidth:10,font:{size:11}}},tooltip:{filter:it=>it.parsed.x>0}},
         scales:{x:{stacked:true,grid:{color:grid},ticks:{color:txt,precision:0}},y:{stacked:true,grid:{display:false},ticks:{color:cssVar("--ink"),font:{size:11},callback:function(v){const l=this.getLabelForValue(v);return l.length>24?l.slice(0,23)+"…":l;}}}}}});}
 }
+/* ================= Financement ================= */
+const FIN_PARTS=[["apport","Apport du candidat (emprunts)","#475569"],["partis","Partis (versements et dépenses prises en charge)","#2563EB"],["dons","Dons de particuliers","#16A34A"],["autres","Autres recettes et concours en nature","#D97706"]];
+const finParts=f=>({apport:f.apport||0,partis:(f.versements||0)+(f.contributions||0),dons:f.dons||0,autres:(f.autres||0)+(f.concours||0)});
+function renderFinance(){
+  killCharts(["finance"]);
+  const box=document.getElementById("financeBox"),L=FINANCE[Y]||[],comptes=L.filter(f=>f.depenses!=null);
+  const coul=k=>(ERA.C[k]&&ERA.C[k].c)||"#64748B",pct=(a,b)=>b?Math.round(a/b*100)+" %":"–";
+  let h=`<h2>${comptes.length?`Comment les candidats de ${Y} ont financé leur campagne`:`Qui finance les prétendants de ${Y} ?`}</h2>`;
+  if(comptes.length){
+    const tot=k=>comptes.reduce((t,f)=>t+(f[k]||0),0),dep=tot("depenses"),etat=tot("etat"),dons=tot("dons");
+    h+=`<p class="lede">D’où vient l’argent de chaque campagne, d’après les comptes arrêtés par la CNCCFP. L’« apport du candidat » est presque toujours emprunté, à une banque ou à un parti, puis remboursé en grande partie par l’État quand le candidat dépasse 5 % des voix. Au total, les candidats ont dépensé ${eur(dep)} ; l’État en a remboursé ${eur(etat)} (${pct(etat,dep)}) et les particuliers ont donné ${eur(dons)}.</p>
+      <div class="bars-box" style="height:${comptes.length*34+110}px"><canvas aria-label="Origine de l’argent des campagnes"></canvas></div>`;
+    h+=`<div class="jlist">${comptes.map(f=>{const p=finParts(f);
+      return `<article class="jc"><div class="jh"><i style="background:${coul(f.cle)}"></i><h3>${esc(f.nom)}</h3></div><div class="dt">${esc(f.parti)}</div>
+        <dl class="patri-mt mt">${[["Dépenses de campagne",eur(f.depenses)],["Remboursé par l’État",`${eur(f.etat)} (${pct(f.etat,f.depenses)})`],
+          ...FIN_PARTS.map(([k,lab])=>[lab,`${eur(p[k])} (${pct(p[k],f.recettes)})`])].map(([t,v])=>`<div><dt>${t}</dt><dd>${v}</dd></div>`).join("")}</dl>
+        ${f.preteur?`<div class="dt"><b>Qui a prêté :</b> ${esc(f.preteur)}</div>`:""}
+        ${f.com?`<div class="dt">${esc(f.com)}</div>`:""}
+        <div class="dt">Source : ${f.lien?`<a href="${esc(f.lien)}" target="_blank" rel="noopener">${esc(f.src)}</a>`:esc(f.src)}</div></article>`;}).join("")}</div>`;
+  }else{
+    h+=`<p class="lede">La période de financement de la campagne de 2027 est ouverte depuis le 1er avril 2026. Les comptes des candidats seront publiés au plus tard le 2 août 2027, puis vérifiés par la CNCCFP. En attendant, voici ce que l’on sait des moyens des partis qui soutiennent les principaux prétendants.</p>`;
+    h+=`<div class="jlist">${L.map(f=>`<article class="jc"><div class="jh"><i style="background:${coul(f.cle)}"></i><h3>${esc(f.nom)}</h3></div><div class="dt">${esc(f.parti)}</div>
+      <p style="margin:.3rem 0">${esc(f.com)}</p><div class="dt">Source : ${f.lien?`<a href="${esc(f.lien)}" target="_blank" rel="noopener">${esc(f.src)}</a>`:esc(f.src)}</div></article>`).join("")||'<p class="dt">Aucune donnée pour l’instant.</p>'}</div>`;
+  }
+  box.innerHTML=h;
+  if(comptes.length){const txt=cssVar("--muted"),grid=cssVar("--line");
+    CH.finance=new Chart(box.querySelector("canvas"),{type:"bar",data:{labels:comptes.map(f=>f.nom),datasets:FIN_PARTS.map(([k,lab,col])=>({label:lab,data:comptes.map(f=>finParts(f)[k]),backgroundColor:col,borderRadius:2}))},
+      options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:"index",intersect:false},
+        plugins:{legend:{position:"bottom",labels:{color:txt,boxWidth:10,font:{size:11}}},tooltip:{filter:it=>it.parsed.x>0,callbacks:{label:it=>`${it.dataset.label} : ${eur(it.parsed.x)}`,footer:its=>{const f=comptes[its[0].dataIndex];return `Dépenses : ${eur(f.depenses)} · remboursé par l’État : ${eur(f.etat)}`;}}}},
+        scales:{x:{stacked:true,grid:{color:grid},ticks:{color:txt,callback:v=>v>=1e6?v/1e6+" M€":v>0?v/1e3+" k€":"0"}},y:{stacked:true,grid:{display:false},ticks:{color:cssVar("--ink"),font:{size:11}}}}}});}
+}
 /* ================= Navigation ================= */
 let TAB="sondages";
 function updHash(){try{history.replaceState(null,"","#"+TAB+"-"+Y);}catch(e){}}
@@ -679,7 +710,7 @@ function setEra(y,fromLoad){
   Y=y;ERA=ERAS[y];visible=new Set(ERA.visible);killCharts();
   document.getElementById("title").textContent=ERA.title;document.getElementById("eraSub").textContent=ERA.sub;
   document.querySelectorAll(".timewarp button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.y===y)));
-  renderPolls();renderAgeVote();renderPop();renderAgePop();renderInst();renderMedia();renderAgeMedia();renderLinks();renderAN();renderCompare();renderCit();renderPatri();renderJustice();if(!fromLoad)updHash();
+  renderPolls();renderAgeVote();renderPop();renderAgePop();renderInst();renderMedia();renderAgeMedia();renderLinks();renderAN();renderCompare();renderCit();renderPatri();renderJustice();renderFinance();if(!fromLoad)updHash();
 }
 document.querySelectorAll(".timewarp button").forEach(b=>b.onclick=()=>{setEra(b.dataset.y);});
 const TABS=[...document.querySelectorAll('[role="tab"]')];
@@ -689,7 +720,7 @@ TABS.forEach(b=>b.onclick=()=>showTab(b.getAttribute("aria-controls"),true));
 /* ================= Démarrage ================= */
 (function start(){
   const h=(location.hash||"").slice(1).split("-");let y="2027",t="sondages";
-  if(["sondages","popularite","assemblee","comparer","patrimoine","justice","citations","instituts","medias","liens"].includes(h[0]))t=h[0];if(ERAS[h[1]])y=h[1];
+  if(["sondages","popularite","assemblee","comparer","patrimoine","justice","financement","citations","instituts","medias","liens"].includes(h[0]))t=h[0];if(ERAS[h[1]])y=h[1];
   setEra(y,true);showTab(t,false);
   if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>setEra(Y,true));
 })();

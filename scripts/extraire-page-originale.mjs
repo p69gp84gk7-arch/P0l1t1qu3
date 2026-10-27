@@ -6,6 +6,7 @@
 import fs from "node:fs";
 import { ENTETE_PATRIMOINE, LIGNES_PATRIMOINE } from "./patrimoine-initial.mjs";
 import { ENTETE_JUSTICE, LIGNES_JUSTICE } from "./justice-initial.mjs";
+import { ENTETE_FINANCEMENT, LIGNES_FINANCEMENT } from "./financement-initial.mjs";
 import vm from "node:vm";
 
 const src = process.argv[2] || "archive/page-originale.html";
@@ -134,6 +135,10 @@ for (const r of LIGNES_PATRIMOINE) add("patrimoine", r);
 /* ---- affaires judiciaires ---- */
 tab("justice", ENTETE_JUSTICE);
 for (const r of LIGNES_JUSTICE) add("justice", r);
+
+/* ---- financement des campagnes ---- */
+tab("financement", ENTETE_FINANCEMENT);
+for (const r of LIGNES_FINANCEMENT) add("financement", r);
 
 /* ---- Assemblée ---- */
 tab("assemblee", ["date_cle", "libelle", "description", "vacants"]);
