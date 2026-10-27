@@ -13,7 +13,35 @@ const el=(t,a={},h="")=>{const e=document.createElement(t);for(const k in a)e.se
 const cssVar=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const DAY=864e5, toD=s=>new Date(s+"T12:00:00").getTime();
 let ERA, Y="2027", CH={};
-function killCharts(keys){(keys||Object.keys(CH)).forEach(k=>{if(CH[k]){CH[k].destroy();delete CH[k];}});}
+function killCharts(keys){(keys||Object.keys(CH)).forEach(k=>{if(CH[k]){if(CH[k]===tipChart)closeTip(true);CH[k].destroy();delete CH[k];}});}
+/* ---- infobulles des graphiques ----
+   À la souris : infobulle classique, agrandie. Sur écran tactile : fiche lisible en bas de l'écran, qui se ferme
+   avec le bouton ×, en touchant ailleurs que sur un graphique, avec Échap ou en changeant d'onglet. */
+const TACTILE=!!(window.matchMedia&&matchMedia("(hover: none), (pointer: coarse)").matches);
+let tipChart=null,lectureActive=false; // lectureActive : ligne verticale du graphique des sondages affichée
+const tipSheet=el("div",{class:"tipsheet",role:"status","aria-live":"polite"});tipSheet.hidden=true;document.body.appendChild(tipSheet);
+function closeTip(sansMaj){
+  const c=tipChart;tipChart=null;tipSheet.hidden=true;
+  if(c&&!sansMaj){try{c.setActiveElements([]);c.tooltip.setActiveElements([],{x:0,y:0});c.update("none");}catch(e){}}
+  if(lectureActive){const t=CH.trend;if(t){t.$cx=null;t.update("none");}readoutAt(null);}
+}
+function ficheTooltip({chart,tooltip}){
+  if(chart.config.options.plugins?.tooltip?.enabled===false)return; // graphiques qui ont leur propre lecture (sondages)
+  if(tooltip.opacity===0){if(tipChart===chart){tipChart=null;tipSheet.hidden=true;}return;}
+  const lignes=(tooltip.body||[]).map((b,i)=>({c:tooltip.labelColors[i]||{},t:[...b.before,...b.lines,...b.after].filter(Boolean)})).filter(x=>x.t.length);
+  const bloc=a=>(a||[]).filter(Boolean).map(x=>`<p>${esc(x)}</p>`).join("");
+  const titre=(tooltip.title||[]).filter(Boolean).join(" · ")||chart.canvas.getAttribute("aria-label")||"";
+  tipSheet.innerHTML=`<div class="th"><b>${esc(titre)}</b><button type="button" class="tx" aria-label="Fermer">×</button></div>
+    ${bloc(tooltip.beforeBody)}<ul>${lignes.map(l=>{const col=typeof l.c.backgroundColor==="string"&&l.c.backgroundColor!=="rgba(0,0,0,0.1)"?l.c.backgroundColor:l.c.borderColor;
+      return `<li><i style="background:${esc(col||"#94A3B8")}"></i><span>${l.t.map(esc).join("<br>")}</span></li>`;}).join("")}</ul>${bloc(tooltip.afterBody)}${bloc(tooltip.footer)}`;
+  tipSheet.querySelector(".tx").onclick=()=>closeTip();
+  tipChart=chart;tipSheet.hidden=false;
+}
+// Après un toucher, le navigateur simule « la souris sort du graphique » : on n'écoute que le tactile et le clic.
+if(TACTILE)Chart.defaults.events=["touchstart","touchmove","click"];
+Object.assign(Chart.defaults.plugins.tooltip,TACTILE?{enabled:false,external:ficheTooltip}:{titleFont:{size:13,weight:"bold"},bodyFont:{size:13},footerFont:{size:12},padding:10,boxPadding:4,caretPadding:6});
+document.addEventListener("pointerdown",e=>{if((tipSheet.hidden&&!lectureActive)||tipSheet.contains(e.target)||e.target.closest("canvas"))return;closeTip();},{passive:true});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeTip();});
 function allPolls(){return ERA.polls;}
 function avgAt(P,k,t,win){const L={};P.forEach(p=>{const pt=toD(p.d);if(pt<=t&&t-pt<=win*DAY&&p.s[k]!=null)L[p.inst]=p.s[k];});const v=Object.values(L);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null;}
 function keysOf(){return Object.keys(ERA.C);}
@@ -70,7 +98,7 @@ function setView(min,max,fromPlugin){
   c.options.scales.x.ticks.stepSize=stepFor(view.max-view.min);fitY();c.update("none");syncUI();
 }
 function readoutAt(day){
-  const box=document.getElementById("readout");if(day==null){box.innerHTML=`<div class="rd">Faites glisser le doigt sur le graphique</div><div class="rp">Les moyennes du jour pointé et les sondages publiés autour de cette date s’affichent ici.</div>`;return;}
+  const box=document.getElementById("readout");lectureActive=day!=null;if(day==null){box.innerHTML=`<div class="rd">Faites glisser le doigt sur le graphique</div><div class="rp">Les moyennes du jour pointé et les sondages publiés autour de cette date s’affichent ici.</div>`;return;}
   const i=Math.max(0,Math.min(trendCache.days.length-1,Math.round(day/7)));
   const items=keysOf().filter(k=>visible.has(k)&&trendCache.s[k][i]!=null).sort((a,b)=>trendCache.s[b][i]-trendCache.s[a][i]);
   const near=allPolls().filter(p=>Math.abs((toD(p.d)-T0)/DAY-day)<=3);
@@ -96,7 +124,7 @@ function buildTrend(P){
   });
   const grid=cssVar("--line"),txt=cssVar("--muted");
   CH.trend=new Chart(document.getElementById("trend"),{type:"scatter",data:{datasets:ds},plugins:[crosshair,voteLine],
-    options:{responsive:true,maintainAspectRatio:false,animation:false,events:["mousemove","mouseout","click","touchstart","touchmove"],
+    options:{responsive:true,maintainAspectRatio:false,animation:false,events:TACTILE?["touchstart","touchmove","click"]:["mousemove","mouseout","click","touchstart","touchmove"],
       plugins:{legend:{display:false},tooltip:{enabled:false},
         zoom:{limits:{x:{min:0,max:MAXD,minRange:7}},pan:{enabled:false},
           zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:"x",onZoomComplete:({chart:c})=>setView(c.scales.x.min,c.scales.x.max,true)}}},
@@ -714,7 +742,7 @@ function setEra(y,fromLoad){
 }
 document.querySelectorAll(".timewarp button").forEach(b=>b.onclick=()=>{setEra(b.dataset.y);});
 const TABS=[...document.querySelectorAll('[role="tab"]')];
-function showTab(id,push){TAB=id;TABS.forEach(b=>{const on=b.getAttribute("aria-controls")===id;b.setAttribute("aria-selected",on);document.getElementById(b.getAttribute("aria-controls")).classList.toggle("on",on);});
+function showTab(id,push){closeTip();TAB=id;TABS.forEach(b=>{const on=b.getAttribute("aria-controls")===id;b.setAttribute("aria-selected",on);document.getElementById(b.getAttribute("aria-controls")).classList.toggle("on",on);});
   Object.values(CH).forEach(c=>c.resize());if(push){updHash();window.scrollTo({top:0});}}
 TABS.forEach(b=>b.onclick=()=>showTab(b.getAttribute("aria-controls"),true));
 /* ================= Démarrage ================= */
