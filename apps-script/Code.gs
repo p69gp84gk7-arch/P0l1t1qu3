@@ -42,13 +42,31 @@ function classeur() {
 /* ============================== API JSON ============================== */
 
 function doGet(e) {
-  var sansCache = e && e.parameter && e.parameter.nocache;
+  var p = (e && e.parameter) || {};
+  if (p.action === "maj") return majDepuisApplication();
+  var sansCache = p.nocache;
   var json = sansCache ? null : lireCache();
   if (!json) {
     json = JSON.stringify(exporterOnglets());
     ecrireCache(json);
   }
   return ContentService.createTextOutput(json).setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * Bouton « Mettre à jour les sondages » de l'application : vérifie Wikipédia tout de suite (au plus une fois
+ * toutes les 2 minutes, pour tous les visiteurs) et renvoie le résultat.
+ */
+function majDepuisApplication() {
+  var cache = CacheService.getScriptCache(), res;
+  if (cache.get("maj-application")) {
+    res = { message: "Vérification déjà faite il y a moins de 2 minutes.", ajoutes: 0 };
+  } else {
+    cache.put("maj-application", "1", 120);
+    res = miseAJour();
+  }
+  res.date = Utilities.formatDate(new Date(), classeur().getSpreadsheetTimeZone(), "yyyy-MM-dd HH:mm");
+  return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
 }
 
 function exporterOnglets() {
@@ -144,7 +162,7 @@ function miseAJour() {
       (n1.nouveaux.length ? " Nouveaux candidats à vérifier dans l’onglet candidats : " + n1.nouveaux.join(", ") + "." : "");
     journal("mise à jour Wikipédia", msg);
     viderCache();
-    return { message: msg };
+    return { message: msg, ajoutes: n1.ajoutes + n2 };
   } catch (err) {
     journal("erreur", String(err && err.message || err));
     return { message: "Échec de la mise à jour : " + (err && err.message || err) };

@@ -80,7 +80,13 @@ function scriptMettreAJour() {
     return { message: msg };
   } catch (err) {
     var texte = String(err && err.message || err);
-    if (/has not been used|is disabled|PERMISSION_DENIED|403/.test(texte)) {
+    if (/has not been used in project/.test(texte)) {
+      // Projet Google par défaut d'Apps Script : l'API ne peut pas y être activée. Inutile de réessayer chaque nuit.
+      ecrireParametre("maj_script", "non");
+      texte = "La mise à jour automatique du code n’est pas possible avec le projet Google par défaut d’Apps Script " +
+        "(l’API Apps Script ne peut pas y être activée). Elle est désactivée (parametres > maj_script = non). " +
+        "Pour mettre le script à jour : recoller apps-script/A-COLLER-dans-Apps-Script.gs, puis Déployer > Gérer les déploiements > Nouvelle version (voir README).";
+    } else if (/is disabled|PERMISSION_DENIED|403/.test(texte)) {
       texte += " Activez « API Google Apps Script » sur https://script.google.com/home/usersettings puis réessayez.";
     }
     journal("erreur mise à jour du script", texte);

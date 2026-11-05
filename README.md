@@ -37,7 +37,21 @@ Ensuite le script se met à jour tout seul depuis GitHub (voir plus bas).
    (l’avertissement s’affiche pour tout script personnel non vérifié par Google).
 7. **Sondages > Activer la mise à jour automatique** : sondages toutes les 6 heures, script chaque nuit.
 
-### Mises à jour du script : automatiques
+### Mettre le script à jour à la main (recommandé)
+
+Avec le projet Google par défaut d’Apps Script, la mise à jour automatique décrite plus bas échoue
+(« Apps Script API has not been used in project… ») : Google ne permet pas d’y activer l’API Apps Script.
+Pour installer une nouvelle version du script (environ 2 minutes, sur ordinateur) :
+
+1. Ouvrir le Sheet, menu **Extensions > Apps Script**.
+2. Ouvrir https://github.com/p69gp84gk7-arch/P0l1t1qu3/blob/main/apps-script/A-COLLER-dans-Apps-Script.gs,
+   bouton **Copy raw file**, puis dans l’éditeur : tout sélectionner dans `Code.gs`, coller, enregistrer.
+   S’il existe d’autres fichiers `.gs` dans le projet (`Wikipedia`, `MiseAJourScript`, `Patrimoine`), les supprimer
+   (clic sur ⋮ à côté du nom > Supprimer) : tout le code est dans `Code.gs`.
+3. **Déployer > Gérer les déploiements**, crayon, **Version : Nouvelle version**, **Déployer**. L’adresse `/exec`
+   ne change pas, l’application n’a pas besoin d’être modifiée.
+
+### Mises à jour du script : automatiques (nécessite un projet Google Cloud standard)
 
 Chaque nuit (et à la demande via **Sondages > Mettre à jour le script depuis GitHub**), le script lit
 sa dernière version dans la branche `main` de ce dépôt. Si elle a changé, il remplace son propre code
@@ -72,7 +86,8 @@ Sur téléphone, « Ajouter à l’écran d’accueil » installe l’applicatio
 ## Utilisation au quotidien
 
 - **Rien à faire** pour les sondages de premier et second tour 2027 : ils arrivent seuls depuis
-  Wikipédia, avec une ligne dans l’onglet `journal` à chaque passage.
+  Wikipédia, avec une ligne dans l’onglet `journal` à chaque passage. Le bouton **Mettre à jour les sondages**
+  (onglet Sondages de l’application) lance la vérification tout de suite (au plus une fois toutes les 2 minutes).
 - **Corriger ou ajouter à la main** : modifier directement le classeur. L’application affiche
   la modification au prochain chargement (le cache de l’API est vidé à chaque modification).
 - **Nouveau candidat** : il apparaît dans `candidats` avec `affiche = non` ; passer à `oui`
@@ -111,6 +126,7 @@ npm test    # tests du parseur Wikipédia et de la conversion des onglets
 | `apps-script/Patrimoine.gs` | repère les déclarations de patrimoine des candidats publiées par la HATVP et calcule les montants depuis le XML |
 | `apps-script/Wikipedia.gs` | lecture des tableaux de sondages Wikipédia (fonctions pures, testées sous Node) |
 | `scripts/extraire-page-originale.mjs` | extrait les données de la page d’origine (`archive/`) vers `data/snapshot.json` |
+| `scripts/ajouts-medias-instituts.mjs` | médias et instituts ajoutés après l’extraction de la page d’origine |
 | `scripts/financement-initial.mjs` | comptes de campagne 2017 et 2022 (décisions de la CNCCFP) et ressources des partis pour 2027 |
 | `scripts/justice-initial.mjs` | affaires judiciaires des candidats et de leurs partis (situation au 27 octobre 2026, sources par affaire) |
 | `scripts/patrimoine-initial.mjs` | patrimoine déclaré des candidats 2017 et 2022 (sources et méthode dans le fichier) |

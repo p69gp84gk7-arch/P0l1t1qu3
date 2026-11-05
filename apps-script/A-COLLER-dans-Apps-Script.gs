@@ -45,13 +45,31 @@ function classeur() {
 /* ============================== API JSON ============================== */
 
 function doGet(e) {
-  var sansCache = e && e.parameter && e.parameter.nocache;
+  var p = (e && e.parameter) || {};
+  if (p.action === "maj") return majDepuisApplication();
+  var sansCache = p.nocache;
   var json = sansCache ? null : lireCache();
   if (!json) {
     json = JSON.stringify(exporterOnglets());
     ecrireCache(json);
   }
   return ContentService.createTextOutput(json).setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * Bouton « Mettre à jour les sondages » de l'application : vérifie Wikipédia tout de suite (au plus une fois
+ * toutes les 2 minutes, pour tous les visiteurs) et renvoie le résultat.
+ */
+function majDepuisApplication() {
+  var cache = CacheService.getScriptCache(), res;
+  if (cache.get("maj-application")) {
+    res = { message: "Vérification déjà faite il y a moins de 2 minutes.", ajoutes: 0 };
+  } else {
+    cache.put("maj-application", "1", 120);
+    res = miseAJour();
+  }
+  res.date = Utilities.formatDate(new Date(), classeur().getSpreadsheetTimeZone(), "yyyy-MM-dd HH:mm");
+  return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
 }
 
 function exporterOnglets() {
@@ -147,7 +165,7 @@ function miseAJour() {
       (n1.nouveaux.length ? " Nouveaux candidats à vérifier dans l’onglet candidats : " + n1.nouveaux.join(", ") + "." : "");
     journal("mise à jour Wikipédia", msg);
     viderCache();
-    return { message: msg };
+    return { message: msg, ajoutes: n1.ajoutes + n2 };
   } catch (err) {
     journal("erreur", String(err && err.message || err));
     return { message: "Échec de la mise à jour : " + (err && err.message || err) };
@@ -606,7 +624,13 @@ function scriptMettreAJour() {
     return { message: msg };
   } catch (err) {
     var texte = String(err && err.message || err);
-    if (/has not been used|is disabled|PERMISSION_DENIED|403/.test(texte)) {
+    if (/has not been used in project/.test(texte)) {
+      // Projet Google par défaut d'Apps Script : l'API ne peut pas y être activée. Inutile de réessayer chaque nuit.
+      ecrireParametre("maj_script", "non");
+      texte = "La mise à jour automatique du code n’est pas possible avec le projet Google par défaut d’Apps Script " +
+        "(l’API Apps Script ne peut pas y être activée). Elle est désactivée (parametres > maj_script = non). " +
+        "Pour mettre le script à jour : recoller apps-script/A-COLLER-dans-Apps-Script.gs, puis Déployer > Gérer les déploiements > Nouvelle version (voir README).";
+    } else if (/is disabled|PERMISSION_DENIED|403/.test(texte)) {
       texte += " Activez « API Google Apps Script » sur https://script.google.com/home/usersettings puis réessayez.";
     }
     journal("erreur mise à jour du script", texte);
