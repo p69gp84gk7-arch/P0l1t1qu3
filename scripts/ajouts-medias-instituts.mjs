@@ -2,8 +2,30 @@
 // Un média ajouté rejoint un groupe de propriétaires déjà présent pour la même élection ; il en reprend
 // les colonnes groupe et description.
 
-// [election, propriétaire (groupe existant), média, type, orientation, certitude, détail]
+// [election, propriétaire, média, type, orientation, certitude, détail, groupe, description]
+// groupe et description ne servent que si le propriétaire n'a pas encore de ligne pour cette élection.
+const DRAHI_2027 = ["Altice (SFR) ; i24NEWS", "A vendu BFMTV, RMC et leurs chaînes sœurs à Rodolphe Saadé en 2024, et confié Libération à une structure indépendante qu’il a financée. Garde la chaîne d’information i24NEWS."];
+const BAYLET_17 = "Régionale (Toulouse) ; propriétaire Jean-Michel Baylet, ministre jusqu’en mai 2017 et ancien président du Parti radical de gauche";
+const BAYLET_22 = "Régionale (Toulouse) ; famille de Jean-Michel Baylet, ancien ministre et ex-président du Parti radical de gauche";
 export const AJOUTS_MEDIAS = [
+  // Patrick Drahi
+  ["2017", "Patrick Drahi", "BFM Business", "TV", "Centre-droit", "discuté", "Économie"],
+  ["2017", "Patrick Drahi", "RMC Découverte", "TV", "Centre", "discuté", "Documentaires"],
+  ["2017", "Patrick Drahi", "i24NEWS", "TV", "Centre-droit", "discuté", "Info internationale depuis Israël, en français"],
+  ["2022", "Patrick Drahi", "BFM Business", "TV", "Centre-droit", "discuté", "Économie"],
+  ["2022", "Patrick Drahi", "RMC Story, RMC Découverte", "TV", "Centre", "discuté", "Talk-shows et documentaires"],
+  ["2022", "Patrick Drahi", "BFM régionales (Paris, Lyon, Lille…)", "TV", "Centre", "discuté", "Info locale"],
+  ["2022", "Patrick Drahi", "RMC Sport", "TV", "Centre", "discuté", "Sport"],
+  ["2022", "Patrick Drahi", "i24NEWS", "TV", "Centre-droit", "discuté", "Info internationale depuis Israël, en français"],
+  ["2027", "Patrick Drahi", "i24NEWS", "TV", "Centre-droit", "discuté", "Info internationale depuis Israël, en français", ...DRAHI_2027],
+  // anciennes chaînes de Patrick Drahi, à Rodolphe Saadé depuis 2024
+  ["2027", "Rodolphe Saadé", "BFM Business", "TV", "Centre-droit", "discuté", "Économie (ex-Drahi)"],
+  ["2027", "Rodolphe Saadé", "RMC Story, RMC Découverte", "TV", "Centre", "discuté", "Talk-shows et documentaires (ex-Drahi)"],
+  ["2027", "Rodolphe Saadé", "BFM régionales (Paris, Lyon, Marseille…)", "TV", "Centre", "discuté", "Info locale (ex-Drahi)"],
+  // La Dépêche du Midi (famille Baylet)
+  ["2017", "Autres propriétaires", "La Dépêche du Midi", "Presse", "Centre-gauche", "discuté", BAYLET_17],
+  ["2022", "Autres propriétaires", "La Dépêche du Midi, Midi Libre", "Presse", "Centre-gauche", "discuté", BAYLET_22],
+  // autres ajouts
   ["2017", "Service public", "France Bleu", "Radio", "Centre", "discuté", "Réseau de radios locales de Radio France"],
   ["2022", "Service public", "France Bleu", "Radio", "Centre", "discuté", "Réseau de radios locales de Radio France"],
   ["2027", "Service public", "ICI (ex-France Bleu)", "Radio", "Centre", "discuté", "Réseau de radios locales de Radio France, rebaptisé ICI en 2025"],
@@ -43,9 +65,17 @@ export function appliquerAjouts(T) {
     const r = M.find((r) => String(r[col("election")]) === y && r[col("media")] === ancien);
     if (r) r[col("media")] = nouveau;
   }
-  for (const [y, prop, media, type, orientation, certitude, detail] of AJOUTS_MEDIAS) {
+  for (const [y, prop, media, type, orientation, certitude, detail, groupe, description] of AJOUTS_MEDIAS) {
     if (M.some((r) => String(r[col("election")]) === y && r[col("media")] === media)) continue;
-    const modele = M.find((r) => String(r[col("election")]) === y && r[col("proprietaire")] === prop);
+    let modele = M.find((r) => String(r[col("election")]) === y && r[col("proprietaire")] === prop);
+    if (!modele && groupe) {
+      // nouveau groupe : placé avant les indépendants et le service public de la même élection
+      modele = h.map(() => null);
+      Object.assign(modele, { [col("election")]: y, [col("proprietaire")]: prop, [col("groupe")]: groupe, [col("description")]: description });
+      const i = M.findIndex((r) => String(r[col("election")]) === y && /^(Autres propriétaires|Indépendants|Service public)/.test(r[col("proprietaire")] || ""));
+      M.splice(i < 0 ? M.length : i, 0, Object.assign([...modele], { [col("media")]: media, [col("type")]: type, [col("orientation")]: orientation, [col("certitude")]: certitude, [col("detail")]: detail }));
+      continue;
+    }
     if (!modele) throw new Error(`groupe introuvable : ${y} ${prop}`);
     const ligne = h.map(() => null);
     Object.assign(ligne, { [col("election")]: y, [col("proprietaire")]: prop, [col("groupe")]: modele[col("groupe")], [col("description")]: modele[col("description")],

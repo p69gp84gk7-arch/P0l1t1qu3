@@ -62,7 +62,8 @@ test("candidats, élections et résultats", () => {
     const medAjoutes = new Set(AJOUTS_MEDIAS.filter((r) => r[0] === y).map((r) => r[2]));
     const renomme = Object.fromEntries(RENOMMAGES_MEDIAS.filter((r) => r[0] === y).map((r) => [r[2], r[1]]));
     const sansAjouts = (g) => ({ ...g, d: g.d || undefined, m: g.m.filter((x) => !medAjoutes.has(x[0])).map((x) => [renomme[x[0]] || x[0], ...x.slice(1)]) });
-    assert.deepEqual(plain(a.media).map(sansAjouts), plain(b.media).map((g) => ({ ...g, d: g.d || undefined })));
+    const groupesOrig = new Set(plain(b.media).map((g) => g.o));
+    assert.deepEqual(plain(a.media).filter((g) => groupesOrig.has(g.o)).map(sansAjouts), plain(b.media).map((g) => ({ ...g, d: g.d || undefined })));
     for (const n of medAjoutes) assert.ok(a.media.some((g) => g.m.some((x) => x[0] === n)), n);
     assert.deepEqual(plain(a.left).map((x) => x.slice(0, 2)), plain(b.left).map((x) => x.slice(0, 2)));
     assert.deepEqual(plain(a.right), plain(b.right));

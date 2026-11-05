@@ -27,12 +27,16 @@
 function boutonMiseAJour(json) {
   const btn = document.getElementById("btnMaj"), info = document.getElementById("majInfo");
   if (!btn) return;
-  const t = json.onglets.sondages_2027 || [[]], i = t[0].indexOf("fin_terrain");
-  const dernier = t.slice(1).map((r) => String(r[i] || "").slice(0, 10)).filter(Boolean).sort().pop();
+  // dernier sondage : institut, fin du terrain d'enquête et date d'ajout (la publication suit le terrain de quelques jours)
+  const t = json.onglets.sondages_2027 || [[]], col = (k) => t[0].indexOf(k);
+  const jour = (v) => String(v || "").slice(0, 10);
+  const der = t.slice(1).filter((r) => jour(r[col("fin_terrain")])).sort((a, b) => jour(a[col("fin_terrain")]).localeCompare(jour(b[col("fin_terrain")]))).pop();
   const jourFr = (d) => new Date(d + "T12:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+  const dernier = der ? `${der[col("institut")]}, enquête terminée le ${jourFr(jour(der[col("fin_terrain")]))}` +
+    (col("ajoute_le") >= 0 && jour(der[col("ajoute_le")]) ? `, ajouté le ${jourFr(jour(der[col("ajoute_le")]))}` : "") : "";
   let message = "";
   try { message = sessionStorage.getItem("majMessage") || ""; sessionStorage.removeItem("majMessage"); } catch (e) {}
-  info.textContent = message || (dernier ? `Dernier sondage 2027 : terrain achevé le ${jourFr(dernier)}.` : "");
+  info.textContent = message || (dernier ? `Dernier sondage 2027 : ${dernier}.` : "");
   btn.onclick = async () => {
     const api = (window.CONFIG && window.CONFIG.API_URL) || "";
     btn.disabled = true;
