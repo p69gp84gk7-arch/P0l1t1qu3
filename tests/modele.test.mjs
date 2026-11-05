@@ -3,6 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import vm from "node:vm";
+import { AJOUTS_MEDIAS, AJOUTS_INSTITUTS, RENOMMAGES_MEDIAS } from "../scripts/ajouts-medias-instituts.mjs";
 
 const racine = new URL("../", import.meta.url);
 const lire = (f) => fs.readFileSync(new URL(f, racine), "utf8");
@@ -54,8 +55,16 @@ test("candidats, élections et résultats", () => {
     for (const k of ["title", "start", "end", "live", "note", "take"]) assert.equal(a[k] ?? false, b[k] ?? false, `${y}.${k}`);
     assert.deepEqual([...a.visible].sort(), [...b.visible].sort());
     assert.deepEqual(plain(a.C), plain(b.C));
-    assert.deepEqual(plain(a.inst), plain(b.inst).map((i) => ({ ...i, bill: !!i.bill })));
-    assert.deepEqual(plain(a.media).map((g) => ({ ...g, d: g.d || undefined })), plain(b.media).map((g) => ({ ...g, d: g.d || undefined })));
+    // la page d'origine, plus les médias et instituts ajoutés depuis (scripts/ajouts-medias-instituts.mjs)
+    const instAjoutes = new Set(AJOUTS_INSTITUTS.filter((r) => r[0] === y).map((r) => r[2]));
+    assert.deepEqual(plain(a.inst).filter((i) => !instAjoutes.has(i.k)), plain(b.inst).map((i) => ({ ...i, bill: !!i.bill })));
+    for (const k of instAjoutes) assert.ok(a.inst.some((i) => i.k === k), k);
+    const medAjoutes = new Set(AJOUTS_MEDIAS.filter((r) => r[0] === y).map((r) => r[2]));
+    const renomme = Object.fromEntries(RENOMMAGES_MEDIAS.filter((r) => r[0] === y).map((r) => [r[2], r[1]]));
+    const sansAjouts = (g) => ({ ...g, d: g.d || undefined, m: g.m.filter((x) => !medAjoutes.has(x[0])).map((x) => [renomme[x[0]] || x[0], ...x.slice(1)]) });
+    const groupesOrig = new Set(plain(b.media).map((g) => g.o));
+    assert.deepEqual(plain(a.media).filter((g) => groupesOrig.has(g.o)).map(sansAjouts), plain(b.media).map((g) => ({ ...g, d: g.d || undefined })));
+    for (const n of medAjoutes) assert.ok(a.media.some((g) => g.m.some((x) => x[0] === n)), n);
     assert.deepEqual(plain(a.left).map((x) => x.slice(0, 2)), plain(b.left).map((x) => x.slice(0, 2)));
     assert.deepEqual(plain(a.right), plain(b.right));
     assert.deepEqual(plain(a.edges), plain(b.edges));

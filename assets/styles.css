@@ -213,3 +213,6 @@ h2.sec{font-size:1.3rem;margin:30px 0 4px}
 .tipsheet li{display:flex;gap:8px;align-items:baseline;padding:3px 0}
 .tipsheet li i{flex:none;width:10px;height:10px;border-radius:3px;transform:translateY(1px)}
 .tipsheet p{margin:6px 0 0;color:var(--muted);font-size:.88rem}
+.majbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:0 0 12px}
+.majbar #majInfo{font-size:.85rem;color:var(--muted)}
+.majbar button[disabled]{opacity:.6}

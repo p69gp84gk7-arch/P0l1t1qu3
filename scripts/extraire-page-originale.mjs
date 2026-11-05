@@ -7,6 +7,7 @@ import fs from "node:fs";
 import { ENTETE_PATRIMOINE, LIGNES_PATRIMOINE } from "./patrimoine-initial.mjs";
 import { ENTETE_JUSTICE, LIGNES_JUSTICE } from "./justice-initial.mjs";
 import { ENTETE_FINANCEMENT, LIGNES_FINANCEMENT } from "./financement-initial.mjs";
+import { appliquerAjouts } from "./ajouts-medias-instituts.mjs";
 import vm from "node:vm";
 
 const src = process.argv[2] || "archive/page-originale.html";
@@ -218,6 +219,8 @@ add("parametres",
   ["patrimoine_depuis", "2027-01-01"]);
 tab("journal", ["date", "action", "details"]);
 add("journal", ["2026-10-23", "import initial", "Données reprises de la page d’origine"]);
+
+appliquerAjouts(T);
 
 const snapshot = { version: 1, genere_le: new Date().toISOString(), source: "page d’origine", onglets: T };
 fs.writeFileSync(out, JSON.stringify(snapshot));
