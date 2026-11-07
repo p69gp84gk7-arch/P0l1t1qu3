@@ -77,7 +77,10 @@ test("popularité, âges, Assemblée, audiences", () => {
     assert.deepEqual(plain(M.RAW.pop[y].pres), plain(ORIG.RAW.pop[y].pres));
     assert.deepEqual(plain(M.RAW.pop[y].pm), plain(ORIG.RAW.pop[y].pm));
     const { votants, ...age } = plain(M.AGE[y]);
-    assert.deepEqual(age, plain(ORIG.AGE[y]));
+    const orig = plain(ORIG.AGE[y]);
+    // abstention 2022 corrigée d'après le rapport Ipsos-Sopra Steria (35-49 ans : 23 %, 70 ans et plus : 24 %)
+    if (y === "2022") orig.abst = [42, 46, 23, 20, 12, 24];
+    assert.deepEqual(age, orig);
   }
   const cand = Object.fromEntries(Object.entries(ORIG.RAW.pop["2027"].cand).map(([k, o]) => [k, Object.fromEntries(Object.entries(o).map(([m, v]) => ["2026-" + m, v]))]));
   assert.deepEqual(plain(M.RAW.pop["2027"].cand), cand);
@@ -114,7 +117,12 @@ test("part des votants par âge : inscrits × participation, ramenée à 100", (
     assert.equal(V.inscrits.length, M.AGE[y].groups.length);
     assert.ok(Math.abs(V.votants.reduce((a, b) => a + b, 0) - 100) <= 0.2, y);
   }
-  assert.deepEqual(plain(M.AGE["2022"].votants.votants), [8.7, 10.6, 23.6, 17.8, 18.4, 20.8]);
+  assert.deepEqual(plain(M.AGE["2022"].votants.votants), [8.8, 10.8, 23.6, 17.9, 18.3, 20.7]);
+  // contrôle : la participation recalculée reste proche de la participation officielle
+  for (const y of ["2017", "2022"]) {
+    const V = M.AGE[y].votants, off = V.nbVotants / V.nbInscrits * 100;
+    assert.ok(Math.abs(V.calc - off) < 1, `${y} : ${V.calc} contre ${off}`);
+  }
   assert.equal(M.AGE["2027"].votants, null);
 });
 

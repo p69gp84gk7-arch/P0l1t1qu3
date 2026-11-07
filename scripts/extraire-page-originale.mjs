@@ -8,6 +8,8 @@ import { ENTETE_PATRIMOINE, LIGNES_PATRIMOINE } from "./patrimoine-initial.mjs";
 import { ENTETE_JUSTICE, LIGNES_JUSTICE } from "./justice-initial.mjs";
 import { ENTETE_FINANCEMENT, LIGNES_FINANCEMENT } from "./financement-initial.mjs";
 import { appliquerAjouts } from "./ajouts-medias-instituts.mjs";
+import { ENTETE_INSTITUTIONS, ENTETE_INSTITUTIONS_LIENS, INSTITUTIONS, LIENS_INSTITUTIONS } from "./institutions-initial.mjs";
+import { ENTETE_FICHES, ENTETE_CARRIERES, ENTETE_PARCOURS, LIGNES_FICHES, LIGNES_CARRIERES, LIGNES_PARCOURS } from "./candidats-initial.mjs";
 import vm from "node:vm";
 
 const src = process.argv[2] || "archive/page-originale.html";
@@ -41,12 +43,15 @@ const POLLS = { 2017: D.RAW.p17, 2022: D.RAW.p22, 2027: D.RAW.p27 };
 
 /* ---- élections ---- */
 tab("elections", ["election", "titre", "sous_titre", "debut", "fin", "date_vote", "en_cours", "note", "a_retenir",
-  "r2_date", "r2_a", "r2_b", "r2_score_a", "r2_score_b", "source_age"]);
+  "r2_date", "r2_a", "r2_b", "r2_score_a", "r2_score_b", "source_age", "inscrits_t1", "votants_t1"]);
+// Inscrits et votants du premier tour, France entière (Conseil constitutionnel).
+const PARTICIPATION_T1 = { 2017: [47582183, 37003728], 2022: [48747876, 35923707] };
 for (const y of YEARS) {
   const E = D.ERAS[y], R = E.results;
   const sub = y === "2027" ? "Premier tour le 18 avril 2027, second tour le 2 mai." : E.sub;
   add("elections", [y, E.title, sub, E.start, E.end, D.VOTE[y], yn(E.live), E.note, E.take,
-    R ? R.r2.d : null, R ? R.r2.a : null, R ? R.r2.b : null, R ? R.r2.va : null, R ? R.r2.vb : null, D.AGE[y].src]);
+    R ? R.r2.d : null, R ? R.r2.a : null, R ? R.r2.b : null, R ? R.r2.va : null, R ? R.r2.vb : null, D.AGE[y].src,
+    ...(PARTICIPATION_T1[y] || [null, null])]);
 }
 
 /* ---- candidats ---- */
@@ -109,6 +114,10 @@ tab("popularite_age", ["cle", "tranche", "valeur"]);
 for (const [k, vals] of Object.entries(D.POPAGE.v)) vals.forEach((v, i) => add("popularite_age", [k, D.POPAGE.groups[i], v]));
 
 /* ---- vote par âge ---- */
+// Abstention 2022 relevée dans le rapport Ipsos-Sopra Steria (la page d'origine avait 22 et 23 pour les 35-49 ans
+// et les 70 ans et plus).
+const ABSTENTION_CORRIGEE = { 2022: [42, 46, 23, 20, 12, 24] };
+for (const [y, ab] of Object.entries(ABSTENTION_CORRIGEE)) if (D.AGE[y] && D.AGE[y].abst) D.AGE[y].abst = ab;
 tab("vote_age", ["election", "tranche", "cle", "nom", "couleur", "valeur"]);
 tab("abstention_age", ["election", "tranche", "valeur"]);
 for (const y of YEARS) {
@@ -118,15 +127,17 @@ for (const y of YEARS) {
     if (A.abst) add("abstention_age", [y, g, A.abst[i]]);
   });
 }
-// Part de chaque tranche d'âge parmi les inscrits (Insee Focus n° 241, liste électorale principale au 24 mai 2021),
-// puis parmi les votants : part des inscrits × participation de la tranche, ramenée à 100.
-const INSCRITS_AGE = [11.1, 14.5, 22.4, 16.5, 15.5, 20.0];
+// Part de chaque tranche d'âge parmi les inscrits, puis parmi les votants : part des inscrits × participation
+// de la tranche, ramenée à 100.
+// 2022 : Insee Focus n° 264, liste électorale principale au 9 mars 2022. 2017 : pas de chiffres publiés au même
+// format, on reprend la liste au 24 mai 2021 (Insee Focus n° 241).
+const INSCRITS_AGE = { 2017: [11.1, 14.5, 22.4, 16.5, 15.5, 20.0], 2022: [11.1, 14.7, 22.5, 16.5, 15.3, 20.0] };
 tab("inscrits_age", ["election", "tranche", "part_inscrits", "abstention", "part_votants"]);
 for (const y of YEARS) {
-  const A = D.AGE[y];
-  if (!A.abst || A.groups.length !== INSCRITS_AGE.length) continue;
-  const poids = INSCRITS_AGE.map((p, i) => p * (100 - A.abst[i])), total = poids.reduce((a, b) => a + b, 0);
-  A.groups.forEach((g, i) => add("inscrits_age", [y, g, INSCRITS_AGE[i], A.abst[i], Math.round(poids[i] / total * 1000) / 10]));
+  const A = D.AGE[y], pi = INSCRITS_AGE[y];
+  if (!A.abst || !pi || A.groups.length !== pi.length) continue;
+  const poids = pi.map((p, i) => p * (100 - A.abst[i])), total = poids.reduce((a, b) => a + b, 0);
+  A.groups.forEach((g, i) => add("inscrits_age", [y, g, pi[i], A.abst[i], Math.round(poids[i] / total * 1000) / 10]));
 }
 
 /* ---- patrimoine des candidats ---- */
@@ -140,6 +151,20 @@ for (const r of LIGNES_JUSTICE) add("justice", r);
 /* ---- financement des campagnes ---- */
 tab("financement", ENTETE_FINANCEMENT);
 for (const r of LIGNES_FINANCEMENT) add("financement", r);
+
+/* ---- fiches des candidats ---- */
+tab("fiches", ENTETE_FICHES);
+for (const r of LIGNES_FICHES) add("fiches", r);
+tab("carrieres", ENTETE_CARRIERES);
+for (const r of LIGNES_CARRIERES) add("carrieres", r);
+tab("parcours_electoral", ENTETE_PARCOURS);
+for (const r of LIGNES_PARCOURS) add("parcours_electoral", r);
+
+/* ---- organigramme du pouvoir ---- */
+tab("institutions", ENTETE_INSTITUTIONS);
+for (const r of INSTITUTIONS) add("institutions", r);
+tab("institutions_liens", ENTETE_INSTITUTIONS_LIENS);
+for (const r of LIENS_INSTITUTIONS) add("institutions_liens", r);
 
 /* ---- Assemblée ---- */
 tab("assemblee", ["date_cle", "libelle", "description", "vacants"]);
@@ -207,7 +232,7 @@ add("parametres",
   ["wikipedia_page", "Liste de sondages sur l'élection présidentielle française de 2027"],
   ["derniere_maj", "2026-10-23"],
   ["popularite_age_source", D.POPAGE.src],
-  ["inscrits_age_source", "Insee, Focus n° 241 : électeurs inscrits sur la liste principale par âge au 24 mai 2021 (même répartition appliquée à 2017, faute de chiffres publiés au même format)."],
+  ["inscrits_age_source", "Insee, Focus n° 264 : électeurs inscrits sur la liste principale par âge au 9 mars 2022 (pour 2017, faute de chiffres publiés au même format, liste au 24 mai 2021, Focus n° 241)."],
   ["popularite_source", "Part de « bonnes opinions » dans le baromètre mensuel Ifop-Fiducial pour Paris Match et Sud Radio (pas de vague en août)."],
   ["popularite_commentaire", "En octobre 2026, 41 des 50 personnalités testées reculent ; Raphaël Glucksmann et David Lisnard sont les principales exceptions."],
   ["citations_fin", iso(CIT_END)],

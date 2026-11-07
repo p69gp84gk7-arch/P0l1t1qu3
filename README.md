@@ -7,9 +7,16 @@ Les données vivent dans un **Google Sheet** et les nouveaux sondages 2027 y son
 
 ```
 Wikipédia ──(toutes les 6 h)──▶ Google Sheet ──(API JSON Apps Script)──▶ application web
-                                    ▲                                         │
-                       modifications à la main                 secours hors ligne : data/snapshot.json
+                                    ▲    ▲                                    │
+                 modifications à la main  │                    secours hors ligne : data/snapshot.json
+                                          │
+open data de l'Assemblée, GDELT ──(GitHub, chaque jour)──▶ data/scrutins.json, data/tonalite.json
 ```
+
+Les votes de l’Assemblée et le ton de la presse sont préparés chaque jour par une tâche GitHub
+(`.github/workflows/donnees-quotidiennes.yml`) : l’open data de l’Assemblée pèse 200 Mo décompressé et GDELT
+limite le nombre de requêtes, ce que le script du classeur ne peut pas absorber. Le script recopie ensuite les
+deux fichiers dans le classeur ; l’application prend la version la plus récente entre le classeur et ces fichiers.
 
 - Classeur : [Présidentielles 2017-2027 – données](https://docs.google.com/spreadsheets/d/1eobPJfulibdFjZgAsjSOJRuLU1cHX7nXv119nVJF0Ak/edit) (privé ; l’onglet LISEZ-MOI décrit chaque onglet).
 - Application : `index.html` + `assets/` (HTML/CSS/JS sans étape de compilation, Chart.js).
@@ -46,7 +53,7 @@ Pour installer une nouvelle version du script (environ 2 minutes, sur ordinateur
 1. Ouvrir le Sheet, menu **Extensions > Apps Script**.
 2. Ouvrir https://github.com/p69gp84gk7-arch/P0l1t1qu3/blob/main/apps-script/A-COLLER-dans-Apps-Script.gs,
    bouton **Copy raw file**, puis dans l’éditeur : tout sélectionner dans `Code.gs`, coller, enregistrer.
-   S’il existe d’autres fichiers `.gs` dans le projet (`Wikipedia`, `MiseAJourScript`, `Patrimoine`), les supprimer
+   S’il existe d’autres fichiers `.gs` dans le projet (`Wikipedia`, `MiseAJourScript`, `Patrimoine`, `DonneesGitHub`), les supprimer
    (clic sur ⋮ à côté du nom > Supprimer) : tout le code est dans `Code.gs`.
 3. **Déployer > Gérer les déploiements**, crayon, **Version : Nouvelle version**, **Déployer**. L’adresse `/exec`
    ne change pas, l’application n’a pas besoin d’être modifiée.
@@ -104,7 +111,16 @@ Sur téléphone, « Ajouter à l’écran d’accueil » installe l’applicatio
 - **Financement des campagnes** (onglet `financement`) : comptes 2017 et 2022 arrêtés par la CNCCFP. Pour 2027,
   les comptes seront publiés au plus tard le 2 août 2027 : remplacer alors les lignes 2027 par les montants retenus
   par la Commission (mêmes colonnes que 2022).
-- **Popularité, Assemblée, médias, citations** : mises à jour manuelles dans les onglets correspondants.
+- **Votes de l’Assemblée** (onglets `scrutins` et `scrutins_groupes`) et **ton de la presse** (onglets `tonalite`
+  et `tonalite_articles`) : rien à faire. La tâche GitHub « Données quotidiennes » tourne chaque matin (onglet
+  Actions du dépôt, bouton *Run workflow* pour la lancer tout de suite) ; le script recopie ses fichiers dans le
+  classeur à chaque mise à jour, ou tout de suite par le menu **Sondages > Recopier les votes de l’Assemblée et la
+  tonalité de la presse**. Ces onglets sont réécrits à chaque fois : ne pas les modifier à la main.
+- **Fiches des candidats** (onglets `fiches`, `carrieres`, `parcours_electoral`) et **organigramme du pouvoir**
+  (`institutions`, `institutions_liens`) : à la main. Une nouvelle candidature se déclare dans la colonne
+  `candidatures` de `fiches` (« 2027:clé », la clé de l’onglet `candidats`) ; changer le titulaire d’une fonction
+  (nouveau Premier ministre…) dans la colonne `titulaire` de `institutions`.
+- **Popularité, groupes de l’Assemblée, médias, citations** : mises à jour manuelles dans les onglets correspondants.
 - **Suspendre la mise à jour auto** : `parametres > maj_auto = non`.
 
 Règles du classeur : ne pas renommer les onglets ni les en-têtes ; dates `AAAA-MM-JJ`, mois `AAAA-MM`.
@@ -119,17 +135,22 @@ npm test    # tests du parseur Wikipédia et de la conversion des onglets
 | Fichier | Rôle |
 |---|---|
 | `assets/donnees.js` | charge l’API (ou `data/snapshot.json`) et convertit les onglets en modèle |
-| `assets/app.js` | rendu des onze onglets de l’application |
+| `assets/app.js` | rendu des quatorze onglets de l’application |
 | `apps-script/A-COLLER-dans-Apps-Script.gs` | les fichiers .gs ci-dessous réunis, à coller dans le classeur (`node scripts/assembler-apps-script.mjs`) |
 | `apps-script/Code.gs` | API JSON, menu, déclencheur, écriture des nouveaux sondages |
 | `apps-script/MiseAJourScript.gs` | mise à jour du script par lui-même depuis GitHub, et republication de l’application web |
 | `apps-script/Patrimoine.gs` | repère les déclarations de patrimoine des candidats publiées par la HATVP et calcule les montants depuis le XML |
+| `apps-script/DonneesGitHub.gs` | recopie dans le classeur les votes de l’Assemblée et le ton de la presse préparés chaque jour sur GitHub |
 | `apps-script/Wikipedia.gs` | lecture des tableaux de sondages Wikipédia (fonctions pures, testées sous Node) |
 | `scripts/extraire-page-originale.mjs` | extrait les données de la page d’origine (`archive/`) vers `data/snapshot.json` |
 | `scripts/ajouts-medias-instituts.mjs` | médias et instituts ajoutés après l’extraction de la page d’origine |
 | `scripts/financement-initial.mjs` | comptes de campagne 2017 et 2022 (décisions de la CNCCFP) et ressources des partis pour 2027 |
 | `scripts/justice-initial.mjs` | affaires judiciaires des candidats et de leurs partis (situation au 27 octobre 2026, sources par affaire) |
 | `scripts/patrimoine-initial.mjs` | patrimoine déclaré des candidats 2017 et 2022 (sources et méthode dans le fichier) |
+| `scripts/importer-scrutins.mjs` | votes de l’Assemblée : open data officiel → `data/scrutins.json` (lancé chaque jour par GitHub) |
+| `scripts/importer-tonalite.mjs` | ton des articles qui citent chaque personnalité (GDELT) → `data/tonalite.json` (chaque jour) |
+| `scripts/candidats-initial.mjs` | fiches des candidats : biographie, carrière, résultats passés, photos Wikimedia Commons |
+| `scripts/institutions-initial.mjs` | organigramme du pouvoir (Constitution de 1958) |
 | `scripts/importer-wikipedia.mjs` | applique la même mise à jour Wikipédia au fichier de secours |
 
 Mettre à jour le fichier de secours : `node scripts/importer-wikipedia.mjs`, ou le remplacer par la réponse de l’API (`curl -L "$API_URL" > data/snapshot.json`).
@@ -142,9 +163,17 @@ Mettre à jour le fichier de secours : `node scripts/importer-wikipedia.mjs`, ou
 - Patrimoine : classement sur le patrimoine déclaré (biens) plus la fortune estimée hors déclaration ; les dettes
   sont affichées à part. Montants calculés depuis le XML : immeubles à hauteur de la quote-part détenue, biens
   marqués « non conservés » exclus, dettes = capital restant dû.
+- Vote par âge : part des votants = part des inscrits × participation de la tranche (sondage Ipsos « jour du vote »),
+  ramenée à 100 ; la participation recalculée est comparée à la participation officielle (contrôle affiché).
+- Votes de l’Assemblée : position d’un groupe = position majoritaire de ses députés (open data) ; « du côté du
+  résultat » = le groupe a voté pour un texte adopté ou contre un texte rejeté. Seuls les votes sur l’ensemble d’un
+  texte, les motions, les résolutions et les déclarations sont repris, pas les amendements ni les articles.
+- Ton de la presse : note GDELT de chaque article (−10 à +10) ; négatif à −2 ou moins, positif à +2 ou plus.
+  C’est le ton de l’article entier, pas une opinion sur la personne citée.
 - Duels de second tour : moyenne des mesures des 61 derniers jours, ou des 3 dernières si le duel est rare ; duels sans mesure depuis 6 mois masqués.
 
 ## Sources
 
 Wikipédia (CC BY-SA 4.0), Commission des sondages, instituts, EPOC Info, Ifop-Fiducial, Assemblée nationale,
-Saper Vedere, Médiamétrie, ministère de l’Intérieur, Insee, HATVP (licence ouverte), CNCCFP. Détail dans le pied de page de l’application.
+Saper Vedere, Médiamétrie, ministère de l’Intérieur, Insee, HATVP (licence ouverte), CNCCFP, open data de l’Assemblée
+nationale (licence ouverte), GDELT, Wikidata et Wikimedia Commons (photos sous licences libres, auteur indiqué). Détail dans le pied de page de l’application.

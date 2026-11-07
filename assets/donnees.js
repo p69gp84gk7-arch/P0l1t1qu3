@@ -17,16 +17,32 @@ async function chargerJSON(url, delai) {
   }
 }
 
+// Fichiers mis à jour chaque jour sur GitHub et recopiés dans le Sheet par le script : on prend la version la plus
+// récente des deux (utile tant que le script du Sheet n'a pas été mis à jour).
+const DONNEES_QUOTIDIENNES = ["data/scrutins.json", "data/tonalite.json"];
+
+async function completerDonnees(json) {
+  const P = Object.fromEntries(lignes(json.onglets, "parametres").map((r) => [txt(r.cle), txt(r.valeur)]));
+  await Promise.all(DONNEES_QUOTIDIENNES.map(async (f) => {
+    try {
+      const d = await chargerJSON(f, 10000), cle = "github_" + f.replace(/\W+/g, "_");
+      const manque = Object.keys(d.onglets).some((n) => !json.onglets[n] || json.onglets[n].length < 2);
+      if (manque || txt(d.genere_le) > txt(P[cle])) Object.assign(json.onglets, d.onglets);
+    } catch (e) { /* fichier absent : on garde ce que donne le Sheet */ }
+  }));
+  return json;
+}
+
 async function chargerDonnees() {
   const api = (window.CONFIG && window.CONFIG.API_URL) || "";
   if (api) {
     try {
-      return { json: await chargerJSON(api, 15000), origine: "sheet" };
+      return { json: await completerDonnees(await chargerJSON(api, 15000)), origine: "sheet" };
     } catch (e) {
       console.warn("Google Sheet indisponible, données de secours utilisées :", e);
     }
   }
-  return { json: await chargerJSON(DONNEES_SECOURS, 15000), origine: "secours" };
+  return { json: await completerDonnees(await chargerJSON(DONNEES_SECOURS, 15000)), origine: "secours" };
 }
 
 /* ---------- outils ---------- */
@@ -167,7 +183,12 @@ function construireModele(json) {
     const pi = groups.map((g) => { const x = insc.find((r) => txt(r.election) === y && txt(r.tranche) === g); return x ? num(x.part_inscrits) : null; });
     const poids = pi.every((x) => x !== null) && ab.every((x) => x !== null) ? pi.map((p, i) => p * (100 - ab[i])) : null;
     const total = poids && poids.reduce((a, b) => a + b, 0);
-    const votants = total ? { inscrits: pi, votants: poids.map((w) => Math.round(w / total * 1000) / 10), src: txt(PARAM.inscrits_age_source) } : null;
+    const votants = total ? {
+      inscrits: pi, votants: poids.map((w) => Math.round(w / total * 1000) / 10), src: txt(PARAM.inscrits_age_source),
+      // participation recalculée à partir des tranches, à comparer au chiffre officiel
+      calc: Math.round(total / pi.reduce((a, b) => a + b, 0) * 10) / 10,
+      nbInscrits: num(e.inscrits_t1), nbVotants: num(e.votants_t1),
+    } : null;
     AGE[y] = { src: txt(e.source_age), groups, cols, v: vals, abst: ab.some((x) => x !== null) ? ab : null, votants };
   }
 
@@ -283,8 +304,45 @@ function construireModele(json) {
     })).sort((a, b) => (b.depenses ?? -1) - (a.depenses ?? -1));
   }
 
+  /* votes à l'Assemblée nationale (open data de l'Assemblée, préparé chaque jour sur GitHub) */
+  const sg = grouper(L("scrutins_groupes"), (r) => txt(num(r.numero)));
+  const SCRUTINS = L("scrutins").filter((r) => num(r.numero)).map((r) => ({
+    n: num(r.numero), d: jour(r.date), type: txt(r.type), cat: txt(r.categorie), titre: txt(r.titre), objet: txt(r.objet),
+    auteur: txt(r.auteur), ag: txt(r.auteur_groupe), sort: txt(r.sort), pour: num(r.pour) || 0, contre: num(r.contre) || 0,
+    abst: num(r.abstentions) || 0, votants: num(r.votants) || 0, lien: txt(r.lien), dossier: txt(r.lien_dossier),
+    g: (sg.get(txt(num(r.numero))) || []).map((x) => ({ s: txt(x.sigle), pos: txt(x.position), pour: num(x.pour) || 0, contre: num(x.contre) || 0,
+      abst: num(x.abstentions) || 0, nv: num(x.non_votants) || 0, m: num(x.membres) || 0 })),
+  })).sort((a, b) => b.n - a.n);
+
+  /* tonalité de la presse qui cite chaque personnalité (GDELT) */
+  const ta = grouper(L("tonalite_articles"), "personnalite");
+  const TONALITE = L("tonalite").filter((r) => txt(r.personnalite)).map((r) => ({
+    nom: txt(r.personnalite), debut: jour(r.periode_debut), fin: jour(r.periode_fin), n: num(r.articles) || 0,
+    neg: num(r.negatifs) || 0, neu: num(r.neutres) || 0, pos: num(r.positifs) || 0, ton: num(r.ton_moyen),
+    ex: (ta.get(txt(r.personnalite)) || []).map((x) => ({ sens: txt(x.sens), ton: num(x.ton), titre: txt(x.titre), media: txt(x.media), lien: txt(x.lien) })),
+  }));
+
+  /* fiches des candidats : une par personne, rattachée aux candidats de chaque élection (« année:clé ») */
+  const car = grouper(L("carrieres"), "personne"), parc = grouper(L("parcours_electoral"), "personne");
+  const FICHES = L("fiches").filter((r) => txt(r.personne)).map((r) => ({
+    p: txt(r.personne), nom: txt(r.nom), cand: txt(r.candidatures).split(";").map((x) => x.split(":").map((y) => y.trim())).filter((x) => x.length === 2 && x[0] && x[1]),
+    naissance: jour(r.naissance), lieu: txt(r.lieu_naissance), parti: txt(r.parti), resume: txt(r.resume), photo: txt(r.photo),
+    photoPage: txt(r.photo_page), photoAuteur: txt(r.photo_auteur), photoLic: txt(r.photo_licence), wiki: txt(r.wikipedia),
+    carriere: (car.get(txt(r.personne)) || []).map((x) => ({ debut: txt(x.debut), fin: txt(x.fin), f: txt(x.fonction) })),
+    elections: (parc.get(txt(r.personne)) || []).map((x) => ({ a: txt(x.annee), e: txt(x.election), tour: txt(x.tour), score: num(x.score), res: txt(x.resultat) })),
+  }));
+
+  /* organigramme du pouvoir (onglet Informations) */
+  const INSTIT = {
+    items: L("institutions").filter((r) => txt(r.cle)).map((r) => ({
+      cle: txt(r.cle), niveau: txt(r.niveau), col: txt(r.colonne), ordre: num(r.ordre) || 0, nom: txt(r.nom), role: txt(r.role),
+      desig: txt(r.designation), mandat: txt(r.mandat), titulaire: txt(r.titulaire), onglet: txt(r.onglet), c: txt(r.couleur) || "#64748B",
+    })).sort((a, b) => a.ordre - b.ordre),
+    liens: L("institutions_liens").filter((r) => txt(r.de) && txt(r.vers)).map((r) => ({ de: txt(r.de), vers: txt(r.vers), rel: txt(r.relation), art: txt(r.article) })),
+  };
+
   return {
-    RAW, AGE, POPAGE, SV, PATRI, JUSTICE, FINANCE, PUB: L("acteurs_publics").map((r) => ({ n: txt(r.nom), t: txt(r.type), r: txt(r.role) })),
+    RAW, AGE, POPAGE, SV, PATRI, JUSTICE, FINANCE, SCRUTINS, TONALITE, INSTIT, FICHES, PUB: L("acteurs_publics").map((r) => ({ n: txt(r.nom), t: txt(r.type), r: txt(r.role) })),
     C27: C["2027"] || {}, POPC, POPN, ERAS, VOTE, AN, MTYPE, MOWN, PARAM, couleurDuel,
     TVAGE: L("audience_age").map((r) => [txt(r.chaine), num(r.age_moyen), oui(r.chaine_info) ? "i" : "g"]),
   };
