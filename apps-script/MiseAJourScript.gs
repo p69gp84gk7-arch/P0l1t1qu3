@@ -13,7 +13,8 @@ var FICHIERS_SCRIPT = [
   { name: "Code", type: "SERVER_JS", chemin: "apps-script/Code.gs" },
   { name: "Wikipedia", type: "SERVER_JS", chemin: "apps-script/Wikipedia.gs" },
   { name: "MiseAJourScript", type: "SERVER_JS", chemin: "apps-script/MiseAJourScript.gs" },
-  { name: "Patrimoine", type: "SERVER_JS", chemin: "apps-script/Patrimoine.gs" }
+  { name: "Patrimoine", type: "SERVER_JS", chemin: "apps-script/Patrimoine.gs" },
+  { name: "DonneesGitHub", type: "SERVER_JS", chemin: "apps-script/DonneesGitHub.gs" }
 ];
 
 /**

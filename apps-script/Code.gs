@@ -5,7 +5,8 @@
  *    (c'est ce que lit l'application web). Le classeur lui-même peut rester privé.
  * 2. Mise à jour automatique : toutes les 6 heures, il lit la page Wikipédia des
  *    sondages 2027 et ajoute les nouveaux sondages (1er et 2nd tour) dans le classeur,
- *    puis vérifie si la HATVP a publié les déclarations de patrimoine des candidats (Patrimoine.gs).
+ *    puis vérifie si la HATVP a publié les déclarations de patrimoine des candidats (Patrimoine.gs)
+ *    et recopie les votes de l'Assemblée et la tonalité de la presse préparés sur GitHub (DonneesGitHub.gs).
  *
  * Installation : voir README.md, section « Mise en place ».
  */
@@ -24,6 +25,7 @@ function onOpen() {
   SpreadsheetApp.getUi().createMenu("Sondages")
     .addItem("Mettre à jour depuis Wikipédia", "miseAJourManuelle")
     .addItem("Vérifier les déclarations de patrimoine (HATVP)", "patrimoineMiseAJourManuelle")
+    .addItem("Recopier les votes de l’Assemblée et la tonalité de la presse", "donneesGitHubMiseAJourManuelle")
     .addItem("Activer la mise à jour automatique (toutes les 6 h)", "installerDeclencheur")
     .addItem("Désactiver la mise à jour automatique", "supprimerDeclencheurs")
     .addSeparator()
@@ -64,6 +66,7 @@ function majDepuisApplication() {
   } else {
     cache.put("maj-application", "1", 120);
     res = miseAJour();
+    if (typeof donneesGitHubMiseAJour === "function") donneesGitHubMiseAJour(false);
   }
   res.date = Utilities.formatDate(new Date(), classeur().getSpreadsheetTimeZone(), "yyyy-MM-dd HH:mm");
   return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
@@ -142,6 +145,7 @@ function miseAJourAuto() {
   if (String(parametre("maj_auto") || "oui").toLowerCase() !== "non") miseAJour();
   // Patrimoine.gs peut manquer pendant la nuit qui suit son ajout (il arrive à la mise à jour suivante du script).
   if (typeof patrimoineMiseAJourAuto === "function") patrimoineMiseAJourAuto();
+  if (typeof donneesGitHubMiseAJour === "function") donneesGitHubMiseAJour(false);
 }
 
 function miseAJour() {

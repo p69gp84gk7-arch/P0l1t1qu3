@@ -31,6 +31,7 @@
   <button role="tab" id="t-sondages" aria-controls="sondages" aria-selected="true">Sondages</button>
   <button role="tab" id="t-popularite" aria-controls="popularite" aria-selected="false">Popularité</button>
   <button role="tab" id="t-assemblee" aria-controls="assemblee" aria-selected="false">Assemblée</button>
+  <button role="tab" id="t-candidats" aria-controls="candidats" aria-selected="false">Candidats</button>
   <button role="tab" id="t-comparer" aria-controls="comparer" aria-selected="false">Comparer</button>
   <button role="tab" id="t-patrimoine" aria-controls="patrimoine" aria-selected="false">Patrimoine</button>
   <button role="tab" id="t-justice" aria-controls="justice" aria-selected="false">Justice</button>
@@ -39,6 +40,7 @@
   <button role="tab" id="t-instituts" aria-controls="instituts" aria-selected="false">Instituts</button>
   <button role="tab" id="t-medias" aria-controls="medias" aria-selected="false">Médias</button>
   <button role="tab" id="t-liens" aria-controls="liens" aria-selected="false">Liens médias ↔ sondeurs</button>
+  <button role="tab" id="t-informations" aria-controls="informations" aria-selected="false">Informations</button>
 </div></nav>
 
 <div class="chargement" id="chargement" role="status" aria-live="polite"><span class="roue" aria-hidden="true"></span><span id="chargementTexte">Chargement des données…</span></div>
@@ -107,6 +109,7 @@
     <div class="chips" id="coalChips"></div>
     <div id="coalBar"></div>
   </div>
+  <div class="block updater" id="votesBox"></div>
   <div class="block">
     <h2>Les groupes</h2>
     <div class="scroll"><table id="anTable"></table></div>
@@ -121,6 +124,11 @@
     <div class="bars-box"><canvas id="anDiff" aria-label="Évolution des sièges"></canvas></div>
     <p class="hint">Familles regroupées pour la comparaison : la gauche radicale réunit LFI et les communistes (GDR) ; le bloc central les groupes macronistes, MoDem et Horizons ; l’extrême droite le RN (FN en 2017, alors non-inscrit) et l’UDR d’Éric Ciotti ; les Constructifs de 2017 sont classés à droite. Sources : Assemblée nationale (compositions de début de législature et tableau des effectifs au 8 octobre 2026).</p>
   </div>
+</section>
+
+<section class="panel" id="candidats" role="tabpanel" aria-labelledby="t-candidats">
+  <p class="note">Une fiche par candidat de l’élection choisie en haut de page : parcours, fonctions occupées, résultats aux élections passées. Les photos viennent de Wikimedia Commons (auteur et licence sous chaque photo).</p>
+  <div class="block updater"><div class="chips" id="candChips"></div><div id="candBox"></div></div>
 </section>
 
 <section class="panel" id="comparer" role="tabpanel" aria-labelledby="t-comparer">
@@ -169,7 +177,7 @@
 </section>
 
 <section class="panel" id="citations" role="tabpanel" aria-labelledby="t-citations">
-  <p class="note">Qui parle de qui ? Les publications des journalistes et des médias qui citent les personnalités engagées ou pressenties pour 2027, par personnalité, par type de média et par chaîne ou journal.</p>
+  <p class="note">Qui parle de qui, et sur quel ton ? Le ton des articles de presse qui citent chaque personnalité (plutôt positif ou plutôt négatif), puis les publications des journalistes et des médias qui citent les personnalités engagées ou pressenties pour 2027, par personnalité, par type de média et par chaîne ou journal.</p>
   <div id="citBox"></div>
 </section>
 
@@ -218,6 +226,27 @@
   <div class="block"><h2>Ce qu’il faut retenir</h2><div id="linkTake"></div></div>
 </section>
 
+<section class="panel" id="informations" role="tabpanel" aria-labelledby="t-informations">
+  <p class="note">Qui détient quel pouvoir en France, qui nomme qui et qui contrôle qui, d’après la Constitution de la Ve République (1958). Touchez une case pour voir son rôle, comment elle est désignée, ses titulaires actuels et ses liens avec les autres institutions.</p>
+  <div class="block">
+    <h2>L’organigramme du pouvoir</h2>
+    <div id="orgBox"></div>
+  </div>
+  <div class="block">
+    <h2>Comment une loi est votée</h2>
+    <ol class="etapes">
+      <li><b>Dépôt.</b> Le Gouvernement dépose un <i>projet</i> de loi (après avis du Conseil d’État et adoption en Conseil des ministres) ou un député ou un sénateur dépose une <i>proposition</i> de loi.</li>
+      <li><b>Commission.</b> Une commission de l’assemblée saisie (Assemblée ou Sénat) étudie le texte et le modifie par des amendements.</li>
+      <li><b>Séance publique.</b> Tous les députés (ou sénateurs) débattent, votent les amendements, chaque article, puis l’ensemble du texte. Ce sont ces votes que montre l’onglet Assemblée.</li>
+      <li><b>Navette.</b> Le texte passe à l’autre assemblée, et ainsi de suite jusqu’à ce que les deux votent le même texte.</li>
+      <li><b>Désaccord.</b> Une commission mixte paritaire (7 députés, 7 sénateurs) cherche un compromis ; à défaut, l’Assemblée nationale a le dernier mot.</li>
+      <li><b>Contrôle.</b> 60 députés, 60 sénateurs, le Président, le Premier ministre ou un président d’assemblée peuvent saisir le Conseil constitutionnel, qui peut censurer tout ou partie de la loi.</li>
+      <li><b>Promulgation.</b> Le Président de la République signe la loi dans les 15 jours, puis elle est publiée au Journal officiel.</li>
+    </ol>
+    <p class="hint">Raccourci : avec l’article 49, alinéa 3 (« 49.3 »), le Premier ministre peut faire adopter un texte sans vote de l’Assemblée, sauf si une motion de censure renverse le Gouvernement. Il est limité aux budgets et à un autre texte par session.</p>
+  </div>
+</section>
+
 <footer>
   <p class="etat-donnees" id="etatDonnees"></p>
   <p><strong>Sources.</strong></p>
@@ -231,6 +260,10 @@
     <li>Tranches d’âge : sondages Ipsos-Sopra Steria « jour du vote » (2017, 2022), sous-échantillons des sondages 2027 compilés par sondage-presidentielle.fr, baromètre Ifop-Fiducial d’octobre 2026, Médiamétrie, Ipsos bva ; inscrits par âge : Insee.</li>
     <li>Affaires judiciaires : décisions et procédures relayées par Wikipédia (articles sur les affaires et les personnalités), Le Club des juristes, France 24, franceinfo, Le JDD, Consultor ; détail et lien pour chaque affaire dans l’onglet Justice.</li>
     <li>Financement des campagnes : décisions de la CNCCFP sur les comptes de 2017 et 2022 (Journal officiel), Public Sénat, franceinfo, LCP pour les ressources des partis en vue de 2027.</li>
+    <li>Votes de l’Assemblée nationale : open data de l’Assemblée nationale (scrutins, députés, dossiers législatifs), licence ouverte, mis à jour chaque jour.</li>
+    <li>Ton de la presse : projet GDELT (API DOC 2.0), articles en français des 30 derniers jours, mis à jour chaque jour.</li>
+    <li>Fiches des candidats : Wikipédia et Wikidata (dates et lieux de naissance), Wikimedia Commons (photos, sous licences libres indiquées sur chaque fiche), ministère de l’Intérieur et Conseil constitutionnel (résultats), partis (primaires et congrès).</li>
+    <li>Organigramme du pouvoir : Constitution du 4 octobre 1958 (Légifrance), Conseil constitutionnel, vie-publique.fr ; titulaires d’après l’open data de l’Assemblée nationale.</li>
     <li>Patrimoine des candidats : déclarations publiées par la HATVP (open data, licence ouverte) ; montants 2022 relevés par Business Cool ; montants 2017 additionnés à partir du détail publié par Public Sénat, France 24, Le JDD et la-loi-pinel.com.</li>
   </ul>
 </footer>

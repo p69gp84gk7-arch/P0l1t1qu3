@@ -1,6 +1,6 @@
 /* Application : rendu des onglets à partir des données chargées (voir donnees.js). */
 function lancerApplication(D){
-const {RAW,AGE,POPAGE,SV,PATRI,JUSTICE,FINANCE,PUB,C27,POPC,POPN,ERAS,TVAGE,AN,VOTE,MTYPE,MOWN,PARAM,couleurDuel}=D;
+const {RAW,AGE,POPAGE,SV,PATRI,JUSTICE,FINANCE,SCRUTINS,TONALITE,INSTIT,FICHES,PUB,C27,POPC,POPN,ERAS,TVAGE,AN,VOTE,MTYPE,MOWN,PARAM,couleurDuel}=D;
 const POS=["Gauche radicale","Gauche","Centre-gauche","Centre","Centre-droit","Droite","Droite conserv. / identitaire"];
 const POSC=["#9F1239","#E11D48","#F472B6","#A78BFA","#60A5FA","#2563EB","#1E3A8A"];
 const TYPES=["TV","Radio","Presse","Magazine","En ligne"];
@@ -227,8 +227,8 @@ function renderAgeVote(){
     <p class="hint" style="margin-bottom:8px">En tête — ${lead}</p>
     <div class="bars-box" style="height:${A.groups.length*48+110}px"><canvas aria-label="Vote par tranche d’âge"></canvas></div>
     <p class="hint">Source : ${A.src}${ERA.live?" Attention : dans un sondage de 1 000 personnes, il n’y a qu’une centaine de 18-24 ans, soit une marge d’erreur de 8 à 10 points sur cette tranche. C’est pour cela que la page fait la moyenne de plusieurs sondages. Les candidats absents de certains sondages sont moyennés sur ceux où ils sont testés : les totaux ne font donc pas exactement 100 %.":""}</p>`+
-    (A.abst?`<h2 style="margin-top:18px;font-size:1.1rem">Qui n’est pas allé voter ?</h2><p class="lede">Part d’abstention dans chaque tranche d’âge au premier tour. Les jeunes votent beaucoup moins : leur poids réel dans le résultat est donc plus faible que leur poids dans la population.</p><div class="small-chart" style="height:230px"><canvas aria-label="Abstention par âge"></canvas></div>`:"")+
-    (A.votants?`<h2 style="margin-top:18px;font-size:1.1rem">Qui a vraiment fait l’élection ?</h2><p class="lede">Poids de chaque tranche d’âge parmi les inscrits, puis parmi les votants du premier tour. ${votantsPhrase(A)}</p><div class="small-chart" style="height:250px"><canvas aria-label="Part des votants par âge"></canvas></div><p class="hint">Calcul : part des inscrits × participation de la tranche, ramenée à 100. Inscrits : ${A.votants.src} Abstention : ${A.src}</p>`:"");
+    (A.abst?`<h2 style="margin-top:18px;font-size:1.1rem">Qui n’est pas allé voter ?</h2><p class="lede">Part d’abstention dans chaque tranche d’âge au premier tour. Les jeunes votent beaucoup moins : leur poids réel dans le résultat est donc plus faible que leur poids dans la population. Chez les 70 ans et plus, l’abstention remonte : la tranche réunit les 70-79 ans, qui votent beaucoup, et les plus âgés, souvent empêchés par la santé ou la dépendance (selon l’Insee, en 2022, 43 % seulement des 90 ans et plus ont voté à au moins un tour).</p><div class="small-chart" style="height:230px"><canvas aria-label="Abstention par âge"></canvas></div>`:"")+
+    (A.votants?`<h2 style="margin-top:18px;font-size:1.1rem">Qui a vraiment fait l’élection ?</h2><p class="lede">Poids de chaque tranche d’âge parmi les inscrits, puis parmi les votants du premier tour. ${votantsPhrase(A)}</p><div class="small-chart" style="height:250px"><canvas aria-label="Part des votants par âge"></canvas></div><p class="hint">${controleVotants(A.votants)}Calcul : part des inscrits × participation de la tranche, ramenée à 100. Inscrits : ${A.votants.src} Abstention : ${A.src}</p>`:"");
   CH.age1=ageStack(box.querySelector("canvas"),A,ERA.live?110:100);
   if(A.abst){const txt=cssVar("--muted");CH.age2=new Chart(box.querySelectorAll("canvas")[1],{type:"bar",data:{labels:A.groups,datasets:[{label:"Abstention",data:A.abst,backgroundColor:A.abst.map(v=>v>=35?"#B23A3A":v>=25?"#D97706":"#64748B"),borderRadius:4}]},
     options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:"index",intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:it=>`Abstention : ${it.parsed.y} %`}}},
@@ -236,8 +236,16 @@ function renderAgeVote(){
   if(A.votants){const txt=cssVar("--muted"),V=A.votants;CH.age3=new Chart(box.querySelectorAll("canvas")[A.abst?2:1],{type:"bar",data:{labels:A.groups,datasets:[
       {label:"Part des inscrits",data:V.inscrits,backgroundColor:"#94A3B8",borderRadius:3},{label:"Part des votants",data:V.votants,backgroundColor:"#2563EB",borderRadius:3}]},
     options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:"index",intersect:false},plugins:{legend:{position:"bottom",labels:{color:txt,boxWidth:10,font:{size:11}}},
-      tooltip:{callbacks:{label:it=>`${it.dataset.label} : ${fmt(it.parsed.y)} %`,afterBody:its=>{const i=its[0].dataIndex,d=V.votants[i]-V.inscrits[i];return `Écart : ${d>0?"+":""}${fmt(Math.round(d*10)/10)} point${Math.abs(d)>=2?"s":""}`;}}}},
+      tooltip:{callbacks:{label:it=>{const i=it.dataIndex,n=it.datasetIndex===0?(V.nbInscrits?V.nbInscrits*V.inscrits[i]/100:null):(V.nbVotants?V.nbVotants*V.votants[i]/100:null);
+          return `${it.dataset.label} : ${fmt(it.parsed.y)} %${n?` (${millions(n)})`:""}`;},afterBody:its=>{const i=its[0].dataIndex,d=V.votants[i]-V.inscrits[i];return `Écart : ${d>0?"+":""}${fmt(Math.round(d*10)/10)} point${Math.abs(d)>=2?"s":""}`;}}}},
       scales:{x:{ticks:{color:txt,font:{size:10}},grid:{display:false}},y:{beginAtZero:true,ticks:{color:txt,callback:v=>v+" %"},grid:{color:cssVar("--line")}}}}});}
+}
+const millions=n=>`${fmt(Math.round(n/1e5)/10)} million${n>=2e6?"s":""}`;
+/** Contrôle : participation recalculée à partir des tranches d'âge, face au chiffre officiel. */
+function controleVotants(V){
+  if(!V.nbInscrits||!V.nbVotants)return "";
+  const off=Math.round(V.nbVotants/V.nbInscrits*1000)/10;
+  return `<b>Contrôle :</b> avec ces chiffres, la participation calculée est de ${fmt(V.calc)} %, pour ${fmt(off)} % officiellement (${millions(V.nbVotants)} de votants sur ${millions(V.nbInscrits)} d’inscrits, Conseil constitutionnel). Les nombres affichés au doigt appliquent les parts à ces totaux officiels. `;
 }
 function votantsPhrase(A){
   const V=A.votants,n=A.groups.length,jeunes=V.votants[0]+V.votants[1],jeunesI=V.inscrits[0]+V.inscrits[1],vieux=V.votants[n-2]+V.votants[n-1],vieuxI=V.inscrits[n-2]+V.inscrits[n-1];
@@ -325,11 +333,71 @@ function renderAN(){
   ANKEYS.forEach(k=>{const b=el("button",{class:"chip","aria-pressed":String(k===ANCUR)},AN[k].label);b.onclick=()=>{ANCUR=k;COAL=new Set();[...sel.children].forEach(c=>c.setAttribute("aria-pressed",String(c===b)));renderHemi();document.getElementById("hemiInfo").innerHTML="";renderGroupTable();};sel.appendChild(b);});
   const A=document.getElementById("anA"),B=document.getElementById("anB");
   if(!A.options.length){ANKEYS.forEach(k=>{A.add(new Option(AN[k].label,k));B.add(new Option(AN[k].label,k));});A.value=ANKEYS[0];B.value=ANKEYS[ANKEYS.length-1];A.onchange=B.onchange=renderANcompare;}
-  renderHemi();document.getElementById("hemiInfo").innerHTML=`<div class="rd">Touchez ou survolez un siège</div><div class="rp">Le groupe, son nombre de députés, sa part et son président s’affichent ici.</div>`;renderGroupTable();renderANcompare();
+  renderHemi();document.getElementById("hemiInfo").innerHTML=`<div class="rd">Touchez ou survolez un siège</div><div class="rp">Le groupe, son nombre de députés, sa part et son président s’affichent ici.</div>`;renderGroupTable();renderANcompare();renderVotes();
 }
 function renderGroupTable(){
   const A=AN[ANCUR],tot=A.g.reduce((s,x)=>s+x[2],0);
   document.getElementById("anTable").innerHTML=`<thead><tr><th>Groupe</th><th>Sièges</th><th>Part</th><th>Président·e</th></tr></thead><tbody>`+A.g.map(g=>`<tr><td><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${g[3]};margin-right:6px"></i>${esc(g[0])} <small style="color:var(--muted)">${esc(g[1])}</small></td><td>${g[2]}</td><td>${fmt(Math.round(g[2]/tot*1000)/10)} %</td><td>${esc(g[5])}</td></tr>`).join("")+(A.vac?`<tr><td>Sièges vacants</td><td>${A.vac}</td><td></td><td></td></tr>`:"")+"</tbody>";
+}
+/* ---- votes de l'Assemblée ---- */
+const VCAT=[["tout","Tout"],["texte","Lois et budgets"],["censure","Motions de censure"],["motion","Motions de rejet"],["resolution","Résolutions"],["autre","Autres"]];
+const VTYPE={texte:"Texte",censure:"Motion de censure",motion:"Motion",resolution:"Résolution",declaration:"Déclaration du Gouvernement",demande:"Demande de procédure",autre:"Vote"};
+const VPOS={pour:"pour",contre:"contre",abstention:"abstention"};
+let VF={cat:"tout",q:"",auteur:"",n:15};
+function groupesAN(){const A=AN[ANKEYS[ANKEYS.length-1]];return A?A.g.map(g=>({s:g[0],nom:g[1],c:g[3]})):[];}
+function votesFiltres(){
+  const q=sansAcc(VF.q);
+  return SCRUTINS.filter(v=>(VF.cat==="tout"||v.cat===VF.cat||(VF.cat==="autre"&&["autre","declaration","demande"].includes(v.cat)))
+    &&(!VF.auteur||(VF.auteur==="Gouvernement"||VF.auteur==="Sénat"?v.auteur===VF.auteur:v.ag===VF.auteur))
+    &&(!q||sansAcc(v.titre+" "+v.auteur).includes(q)));
+}
+const sansAcc=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+function renderVotes(){
+  const box=document.getElementById("votesBox");
+  if(!SCRUTINS.length){box.innerHTML=`<h2>Ce que vote l’Assemblée</h2><p class="lede" style="margin:0">Les votes ne sont pas encore chargés : ils arrivent avec la mise à jour quotidienne.</p>`;return;}
+  const G=groupesAN(),col=Object.fromEntries(G.map(g=>[g.s,g.c])),ordre=Object.fromEntries(G.map((g,i)=>[g.s,i]));
+  const auteurs=[...new Set(SCRUTINS.map(v=>v.auteur==="Gouvernement"||v.auteur==="Sénat"?v.auteur:v.ag).filter(Boolean))].sort((a,b)=>(ordre[a]??-1)-(ordre[b]??-1));
+  const dern=SCRUTINS.reduce((m,v)=>v.d>m?v.d:m,"");
+  box.innerHTML=`<h2>Ce que vote l’Assemblée</h2>
+    <p class="lede">Les votes publics de la législature élue en juillet 2024 : vote final des lois et des budgets, motions de censure contre le Gouvernement, motions de rejet, résolutions (les milliers de votes sur des amendements ne sont pas repris). Pour chaque vote : qui a proposé le texte et ce qu’a voté chaque groupe, c’est-à-dire la position de la majorité de ses députés présents. Mis à jour chaque jour depuis l’open data de l’Assemblée nationale (dernier vote : ${frDate(dern)}).</p>
+    <div class="chips" id="vCat"></div>
+    <div class="vfil"><div><label for="vQ">Rechercher un texte</label><input type="search" id="vQ" placeholder="retraites, budget, logement…" value="${esc(VF.q)}"></div>
+      <div><label for="vA">Proposé par</label><select id="vA"><option value="">Tout le monde</option>${auteurs.map(a=>`<option value="${esc(a)}">${esc(a==="Gouvernement"||a==="Sénat"?a:`un député ${a}`)}</option>`).join("")}</select></div></div>
+    <h3 style="font-size:1rem;margin:12px 0 4px">Comment vote chaque groupe</h3><p class="hint" id="vBilanTxt" style="margin:0 0 6px"></p>
+    <div class="scroll"><table id="vBilan"></table></div>
+    <h3 style="font-size:1rem;margin:16px 0 4px">Les votes, du plus récent au plus ancien</h3>
+    <div class="vkey"><span><b style="background:var(--up)"></b>pour</span><span><b style="background:var(--down)"></b>contre</span><span><b style="background:var(--muted)"></b>abstention</span><span>Les chiffres sont des nombres de députés.</span></div>
+    <div id="vList"></div>`;
+  const cat=document.getElementById("vCat");
+  VCAT.forEach(([k,lab])=>{const b=el("button",{class:"chip","aria-pressed":String(VF.cat===k)},lab);b.onclick=()=>{VF.cat=k;VF.n=15;[...cat.children].forEach(c=>c.setAttribute("aria-pressed",String(c===b)));listeVotes();};cat.appendChild(b);});
+  const q=document.getElementById("vQ");q.oninput=()=>{VF.q=q.value;VF.n=15;listeVotes();};
+  const a=document.getElementById("vA");a.value=VF.auteur;a.onchange=()=>{VF.auteur=a.value;VF.n=15;listeVotes();};
+  function listeVotes(){
+    const L=votesFiltres();
+    // bilan par groupe sur les votes filtrés
+    const B={};L.forEach(v=>v.g.forEach(g=>{const b=B[g.s]=B[g.s]||{pour:0,contre:0,abstention:0,avec:0,n:0};if(B[g.s][g.pos]!==undefined)b[g.pos]++;b.n++;
+      const gagne=v.sort==="adopté"?"pour":"contre";if(g.pos===gagne)b.avec++;}));
+    const gs=Object.keys(B).sort((x,y)=>(ordre[x]??99)-(ordre[y]??99));
+    document.getElementById("vBilanTxt").textContent=L.length?`Sur les ${L.length} vote${L.length>1?"s":""} sélectionné${L.length>1?"s":""} : nombre de fois où la majorité du groupe a voté pour, contre ou s’est abstenue, et part des votes où le groupe était du côté du résultat final.`:"Aucun vote ne correspond.";
+    document.getElementById("vBilan").innerHTML=L.length?`<thead><tr><th>Groupe</th><th>Pour</th><th>Contre</th><th>Abst.</th><th>Du côté du résultat</th></tr></thead><tbody>${gs.map(s=>{const b=B[s];
+      return `<tr><td><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${col[s]||"#A3A3A3"};margin-right:6px"></i>${esc(s)}</td><td>${b.pour}</td><td>${b.contre}</td><td>${b.abstention}</td><td>${b.n?Math.round(b.avec/b.n*100):0} %</td></tr>`;}).join("")}</tbody>`:"";
+    const box=document.getElementById("vList");
+    box.innerHTML=L.slice(0,VF.n).map(v=>{
+      const ok=v.sort==="adopté",tot=v.pour+v.contre+v.abst||1,gs=[...v.g].sort((x,y)=>(ordre[x.s]??99)-(ordre[y.s]??99));
+      const auteur=v.auteur?(v.auteur==="Gouvernement"||v.auteur==="Sénat"?`<b>${esc(v.auteur)}</b>`:`<b>${esc(v.auteur)}</b>${v.ag?` <span style="color:${col[v.ag]||"inherit"}">(${esc(v.ag)})</span>`:""}`):"non précisé dans les données";
+      return `<article class="vc"><div class="vh"><span class="badge" style="background:${ok?"var(--up)":"var(--down)"}">${ok?"Adopté":"Rejeté"}</span><span>${VTYPE[v.cat]||"Vote"}${v.type==="scrutin solennel"?" · vote solennel":""}</span><span>· ${frDate(v.d)}</span></div>
+        <h3>${esc(v.titre)}</h3>
+        <div class="by">${v.cat==="censure"||v.cat==="motion"||v.cat==="demande"?"Déposée par":v.cat==="declaration"?"Présentée par":"Proposé par"} : ${auteur}</div>
+        <div class="tot" aria-hidden="true"><span style="width:${v.pour/tot*100}%;background:var(--up)"></span><span style="width:${v.contre/tot*100}%;background:var(--down)"></span><span style="width:${v.abst/tot*100}%;background:var(--muted)"></span></div>
+        <div class="totl">${v.cat==="censure"?`${v.pour} voix pour la censure (289 nécessaires)`:`${v.pour} pour · ${v.contre} contre · ${v.abst} abstention${v.abst>1?"s":""}`}</div>
+        <div class="vg">${gs.map(g=>`<span class="${g.pos}" title="${g.pour} pour, ${g.contre} contre, ${g.abst} abstention(s), ${g.nv} non-votant(s), sur ${g.m} députés">${esc(g.s)} ${VPOS[g.pos]||"—"}</span>`).join("")}</div>
+        <details><summary>Détail par groupe et texte voté</summary><p>${esc(v.objet)}</p>
+          <div class="scroll"><table><thead><tr><th>Groupe</th><th>Pour</th><th>Contre</th><th>Abst.</th><th>N’ont pas voté</th><th>Membres</th></tr></thead><tbody>${gs.map(g=>`<tr><td>${esc(g.s)}</td><td>${g.pour}</td><td>${g.contre}</td><td>${g.abst}</td><td>${g.m-g.pour-g.contre-g.abst}</td><td>${g.m}</td></tr>`).join("")}</tbody></table></div>
+          <p class="dt"><a href="${esc(v.lien)}" target="_blank" rel="noopener">Le scrutin n° ${v.n} sur le site de l’Assemblée</a>${v.dossier?` · <a href="${esc(v.dossier)}" target="_blank" rel="noopener">le dossier du texte</a>`:""}</p></details></article>`;}).join("")
+      +(L.length>VF.n?`<button type="button" class="chip vplus" id="vPlus">Voir ${Math.min(15,L.length-VF.n)} votes de plus (${L.length-VF.n} restants)</button>`:"");
+    const plus=document.getElementById("vPlus");if(plus)plus.onclick=()=>{VF.n+=15;listeVotes();};
+  }
+  listeVotes();
 }
 /* ================= Comparer ================= */
 const FAMS=[
@@ -420,6 +488,7 @@ function renderCit(){
   if(!ERA.live){box.innerHTML=`<div class="block"><h2>Citations dans les médias</h2><p class="lede" style="margin:0">Ces données ne sont mesurées qu’à partir de janvier 2024 : cette rubrique n’existe que pour 2027.</p></div>`;return;}
   const txt=cssVar("--muted"),grid=cssVar("--line"),ink=cssVar("--ink");
   box.innerHTML=`
+  <div class="block updater" id="tonBox"></div>
   <div class="block updater">
     <h2>1. Qui est le plus cité ?</h2>
     <p class="lede">Nombre de publications de journalistes et de médias politiques qui nomment chaque personnalité sur les réseaux sociaux. Choisissez la période, la mesure et le camp. Glissez le doigt sur une barre pour le détail.</p>
@@ -489,6 +558,7 @@ function renderCit(){
   CH.citMed=new Chart(document.getElementById("citMed"),{type:"bar",data:{labels:mr.map(r=>r.n),datasets:[{label:"Publications sur 12 mois",data:mr.map(r=>r.v),backgroundColor:mr.map(r=>BLOCC[r.b]),borderRadius:3}]},
     options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:"index",intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:it=>`${it.parsed.x} publications · ${BLOCN[mr[it.dataIndex].b]}`}}},
       scales:{x:{grid:{color:grid},ticks:{color:txt}},y:{grid:{display:false},ticks:{color:ink,font:{size:11}}}}}});
+  renderTonalite();
   // --- 5. une personnalité
   const sc=document.getElementById("citCand");[...SV.c].sort((a,b)=>b.ci["12m"][0]-a.ci["12m"][0]).forEach(c=>sc.add(new Option(c.n,c.n)));sc.value=CIT.cand;sc.onchange=()=>{CIT.cand=sc.value;renderCit();};
   const c=SV.c.find(x=>x.n===CIT.cand),y=c.ci["12m"],m30=c.ci["30j"]||[0,0,0],rank=[...SV.c].sort((a,b)=>b.ci["12m"][0]-a.ci["12m"][0]).findIndex(x=>x.n===c.n)+1;
@@ -500,6 +570,40 @@ function renderCit(){
   CH.citCNet=new Chart(document.getElementById("citCNet"),{type:"bar",data:{labels:["Réseaux"],datasets:nk.map(k=>({label:NETN[k]||k,data:[nets[k]],backgroundColor:NETC[k]||"#888"}))},
     options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:"index",intersect:false},plugins:{legend:{position:"bottom",labels:{color:txt,boxWidth:10}},tooltip:{callbacks:{label:it=>`${it.dataset.label} : ${it.parsed.x} publications`}}},
       scales:{x:{stacked:true,display:false},y:{stacked:true,display:false}}}});
+}
+/* ---- tonalité de la presse (GDELT) ---- */
+let TONCUR=null;
+function renderTonalite(){
+  const box=document.getElementById("tonBox");if(!box)return;
+  const T=TONALITE.filter(t=>t.n>=5);
+  if(!T.length){box.innerHTML=`<h2>Positif ou négatif ?</h2><p class="lede" style="margin:0">La tonalité des articles n’est pas encore chargée : elle arrive avec la mise à jour quotidienne.</p>`;return;}
+  const solde=t=>(t.pos-t.neg)/t.n*100,L=[...T].sort((a,b)=>solde(b)-solde(a));
+  if(!TONCUR||!T.some(t=>t.nom===TONCUR))TONCUR=[...T].sort((a,b)=>b.n-a.n)[0].nom;
+  const p=x=>Math.round(x*1000)/10,deb=T[0].debut,fin=T[0].fin;
+  box.innerHTML=`<h2>Positif ou négatif ? Le ton de la presse</h2>
+    <p class="lede">Pour chaque personnalité, les articles de presse en français des 30 derniers jours qui la citent (du ${frDate(deb)} au ${frDate(fin)}), classés selon leur ton : plutôt favorable, neutre ou plutôt défavorable. Classement du plus favorable au plus défavorable (part d’articles positifs moins part d’articles négatifs). Glissez le doigt sur une barre pour les chiffres.</p>
+    <div class="bars-box" style="height:${L.length*26+90}px"><canvas id="tonChart" aria-label="Tonalité des articles par personnalité"></canvas></div>
+    <p class="hint">Comment c’est mesuré : le projet GDELT lit chaque jour la presse en ligne mondiale et note le ton de chaque article de −10 à +10 d’après ses mots positifs et négatifs. Ici, un article est « négatif » à −2 ou moins, « positif » à +2 ou plus. C’est le ton de l’article entier, pas un avis sur la personne : un article qui la cite à propos d’un drame ou d’une polémique est négatif même s’il ne la critique pas. La presse étant en moyenne plutôt négative, comparez surtout les personnalités entre elles. Mis à jour chaque jour.</p>
+    <label for="tonSel">Voir les articles sur</label><select id="tonSel">${[...T].sort((a,b)=>a.nom.localeCompare(b.nom,"fr")).map(t=>`<option>${esc(t.nom)}</option>`).join("")}</select>
+    <p class="hint" id="tonTxt" style="margin:8px 0 0"></p><div class="tex" id="tonEx"></div>`;
+  const sel=document.getElementById("tonSel");sel.value=TONCUR;sel.onchange=()=>{TONCUR=sel.value;exemples();};
+  function exemples(){
+    const t=T.find(x=>x.nom===TONCUR),neg=t.ex.filter(e=>e.sens==="négatif"),pos=t.ex.filter(e=>e.sens==="positif");
+    document.getElementById("tonTxt").innerHTML=`<b>${esc(t.nom)}</b> : ${t.n.toLocaleString("fr-FR")} articles, dont ${fmt(p(t.pos/t.n))} % positifs, ${fmt(p(t.neu/t.n))} % neutres et ${fmt(p(t.neg/t.n))} % négatifs ; ton moyen ${t.ton>0?"+":""}${fmt(t.ton)}. Exemples parmi les articles les plus marqués (titres tels que GDELT les relève, parfois sans apostrophes) :`;
+    const li=e=>`<li>${e.lien?`<a href="${esc(e.lien)}" target="_blank" rel="noopener">${esc(e.titre)}</a>`:esc(e.titre)}<small>${esc(e.media)} · ton ${e.ton>0?"+":""}${fmt(e.ton)}</small></li>`;
+    document.getElementById("tonEx").innerHTML=`<div class="tneg"><h3>Plutôt négatifs</h3><ul>${neg.map(li).join("")||'<li>Aucun article nettement négatif.</li>'}</ul></div><div class="tpos"><h3>Plutôt positifs</h3><ul>${pos.map(li).join("")||'<li>Aucun article nettement positif.</li>'}</ul></div>`;
+  }
+  exemples();
+  const txt=cssVar("--muted"),grid=cssVar("--line"),ink=cssVar("--ink");
+  CH.citTon=new Chart(document.getElementById("tonChart"),{type:"bar",data:{labels:L.map(t=>t.nom),datasets:[
+      {label:"Positifs",data:L.map(t=>p(t.pos/t.n)),backgroundColor:cssVar("--up")},
+      {label:"Neutres",data:L.map(t=>p(t.neu/t.n)),backgroundColor:"#A3ACB9"},
+      {label:"Négatifs",data:L.map(t=>p(t.neg/t.n)),backgroundColor:cssVar("--down")}]},
+    options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:"index",intersect:false},
+      onClick:(e,els)=>{if(els.length){TONCUR=L[els[0].index].nom;sel.value=TONCUR;exemples();}},
+      plugins:{legend:{position:"bottom",labels:{color:txt,boxWidth:10}},tooltip:{callbacks:{label:it=>`${it.dataset.label} : ${fmt(it.parsed.x)} %`,
+        footer:its=>{const t=L[its[0].dataIndex];return `${t.n.toLocaleString("fr-FR")} articles · ton moyen ${t.ton>0?"+":""}${fmt(t.ton)}`;}}}},
+      scales:{x:{stacked:true,max:100,grid:{color:grid},ticks:{color:txt,callback:v=>v+" %"}},y:{stacked:true,grid:{display:false},ticks:{color:ink,font:{size:11}}}}}});
 }
 /* ================= Popularité ================= */
 function lineChart(canvas,labels,sets,yTitle){
@@ -731,6 +835,79 @@ function renderFinance(){
         plugins:{legend:{position:"bottom",labels:{color:txt,boxWidth:10,font:{size:11}}},tooltip:{filter:it=>it.parsed.x>0,callbacks:{label:it=>`${it.dataset.label} : ${eur(it.parsed.x)}`,footer:its=>{const f=comptes[its[0].dataIndex];return `Dépenses : ${eur(f.depenses)} · remboursé par l’État : ${eur(f.etat)}`;}}}},
         scales:{x:{stacked:true,grid:{color:grid},ticks:{color:txt,callback:v=>v>=1e6?v/1e6+" M€":v>0?v/1e3+" k€":"0"}},y:{stacked:true,grid:{display:false},ticks:{color:cssVar("--ink"),font:{size:11}}}}}});}
 }
+/* ================= Candidats : une fiche par personne ================= */
+let CANDCUR=null;
+function fichesElection(){
+  // ordre : candidats visibles de l'élection d'abord (ordre de la liste), puis les autres
+  const cles=Object.keys(ERA.C),rang=k=>{const i=ERA.visible.indexOf(k);return i<0?100+cles.indexOf(k):i;};
+  return FICHES.map(f=>({f,k:(f.cand.find(c=>c[0]===Y)||[])[1]})).filter(x=>x.k).sort((a,b)=>rang(a.k)-rang(b.k)||FICHES.indexOf(a.f)-FICHES.indexOf(b.f));
+}
+function ageEn(naiss,ref){if(!naiss)return null;const n=new Date(naiss+"T12:00:00"),r=ref?new Date(ref+"T12:00:00"):new Date();let a=r.getFullYear()-n.getFullYear();if(r<new Date(r.getFullYear(),n.getMonth(),n.getDate()))a--;return a;}
+function renderCandidats(){
+  const chips=document.getElementById("candChips"),box=document.getElementById("candBox"),L=fichesElection();
+  if(!L.length){chips.innerHTML="";box.innerHTML='<p class="dt">Pas de fiche pour cette élection.</p>';return;}
+  if(!CANDCUR||!L.some(x=>x.f.p===CANDCUR))CANDCUR=L[0].f.p;
+  chips.innerHTML="";
+  L.forEach(({f,k})=>{const b=el("button",{class:"chip","aria-pressed":String(f.p===CANDCUR)},`<i style="background:${(ERA.C[k]||{}).c||"#888"}"></i>${esc(f.nom)}`);
+    b.onclick=()=>{CANDCUR=f.p;[...chips.children].forEach(c=>c.setAttribute("aria-pressed",String(c===b)));fiche();};chips.appendChild(b);});
+  function fiche(){
+    const {f,k}=L.find(x=>x.f.p===CANDCUR),C=ERA.C[k]||{},col=C.c||"#64748B";
+    const dateVote=VOTE[Y],age=ageEn(f.naissance,ERA.live?null:dateVote);
+    const res=ERA.results&&ERA.results.r1[k]!=null?ERA.results.r1[k]:null;
+    // dernière moyenne des sondages pour l'élection en cours
+    let sond=null;if(ERA.live){const P=allPolls(),last=P.length?toD(P[P.length-1].d):null;if(last){const v=avgAt(P,k,last,30);if(v!=null)sond=Math.round(v*10)/10;}}
+    const autres=f.cand.filter(c=>c[0]!==Y).map(c=>c[0]);
+    const jus=(JUSTICE[Y]&&JUSTICE[Y][k])||[],pat=(PATRI[Y]||[]).find(x=>x.cle===k),fin=(FINANCE[Y]||[]).find(x=>x.cle===k);
+    const lien=(t,txt)=>`<button type="button" class="chip cand-go" data-t="${t}">${txt}</button>`;
+    box.innerHTML=`<article class="fiche" style="--c:${col}">
+      <div class="fi-h">${f.photo?`<figure><img src="${esc(f.photo)}" alt="Photo de ${esc(f.nom)}" loading="lazy" width="150" referrerpolicy="no-referrer"><figcaption>${f.photoPage?`<a href="${esc(f.photoPage)}" target="_blank" rel="noopener">Photo</a>`:"Photo"} : ${esc(f.photoAuteur||"auteur inconnu")}, ${esc(f.photoLic)}</figcaption></figure>`:""}
+        <div><h2>${esc(f.nom)}</h2><p class="fi-p">${esc(f.parti)}</p>
+          <dl class="jb">${f.naissance?`<div><dt>Naissance</dt><dd>${new Date(f.naissance+"T12:00:00").toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"})}${f.lieu?` à ${esc(f.lieu)}`:""}${age!=null?` (${age} ans${ERA.live?"":` en ${Y}`})`:""}</dd></div>`:""}
+            <div><dt>En ${Y}</dt><dd>${esc(C.n||"")}${C.p?` · ${esc(C.p)}`:""}${res!=null?` · <b>${fmt(res)} %</b> au premier tour`:sond!=null?` · <b>${fmt(sond)} %</b> dans la moyenne des sondages du dernier mois`:""}</dd></div>
+            ${autres.length?`<div><dt>Autres présidentielles de cette page</dt><dd>${autres.join(", ")}</dd></div>`:""}</dl></div></div>
+      <p>${esc(f.resume)}</p>
+      <h3>Carrière</h3>
+      <ol class="fi-car">${f.carriere.map(c=>`<li><span>${c.debut?esc(c.debut)+(c.fin&&c.fin!==c.debut?"–"+esc(c.fin):c.fin?"":" →"):""}</span>${esc(c.f)}</li>`).join("")}</ol>
+      <h3>Résultats aux élections</h3>
+      ${f.elections.length?`<div class="scroll"><table class="fi-el"><thead><tr><th>Année</th><th>Élection</th><th>Tour</th><th>Score</th><th>Résultat</th></tr></thead><tbody>${f.elections.map(e=>`<tr${e.a===Y?' class="on"':""}><td>${esc(e.a)}</td><td>${esc(e.e)}</td><td>${esc(e.tour)}</td><td><span class="fi-bar"><i style="width:${Math.min(100,e.score||0)}%"></i></span>${e.score!=null?e.score.toLocaleString("fr-FR",{maximumFractionDigits:2})+" %":"–"}</td><td>${esc(e.res)}</td></tr>`).join("")}</tbody></table></div>`
+        :`<p class="dt">${ERA.live?"Première candidature à une élection nationale de premier plan.":"Pas d’autre élection nationale de premier plan."}</p>`}
+      <p class="dt">Scores en % des suffrages exprimés ; pour les primaires, congrès et votes de militants, en % des votants de ces scrutins internes. Les élections locales ne sont pas toutes reprises.</p>
+      <div class="chips" style="margin-top:10px">${lien("sondages","Sondages")}${jus.length?lien("justice",`Justice (${jus.length})`):""}${pat?lien("patrimoine","Patrimoine"):""}${fin?lien("financement","Financement"):""}${f.wiki?`<a class="chip" href="${esc(f.wiki)}" target="_blank" rel="noopener">Wikipédia</a>`:""}</div>
+    </article>`;
+    box.querySelectorAll(".cand-go").forEach(b=>b.onclick=()=>showTab(b.dataset.t,true));
+  }
+  fiche();
+}
+/* ================= Informations : organigramme du pouvoir ================= */
+let ORGCUR="president";
+function renderOrg(){
+  const box=document.getElementById("orgBox"),I=INSTIT.items,Lk=INSTIT.liens;
+  if(!I.length){box.innerHTML='<p class="dt">Organigramme indisponible.</p>';return;}
+  const by=k=>I.find(x=>x.cle===k),niv=n=>I.filter(x=>x.niveau===n);
+  const btn=x=>`<button type="button" class="org-b" data-k="${esc(x.cle)}" style="--c:${esc(x.c)}" aria-pressed="${x.cle===ORGCUR}"><b>${esc(x.nom)}</b>${x.titulaire?`<small>${esc(x.titulaire.split(" (")[0].replace(/^Présidente? : /,""))}</small>`:""}</button>`;
+  // libellé de la relation entre deux cases qui se suivent dans une colonne
+  const fleche=(a,b)=>{const l=Lk.find(x=>x.de===a.cle&&x.vers===b.cle);return l?`<div class="org-f">↓ ${esc(l.rel)}</div>`:`<div class="org-gap"></div>`;};
+  const colonne=(c,titre)=>{const L=niv("pouvoirs").filter(x=>x.col===c);return `<div class="org-col"><h3>${titre}</h3>${L.map((x,i)=>(i?fleche(L[i-1],x):"")+btn(x)).join("")}</div>`;};
+  const grille=(n,titre)=>niv(n).length?`<h3 class="org-sec">${titre}</h3><div class="org-grid">${niv(n).map(btn).join("")}</div>`:"";
+  const cit=niv("citoyens")[0];
+  box.innerHTML=`<div class="org">
+    ${cit?`<div class="org-top">${btn(cit)}</div><div class="org-f">↓ élisent le Président, les députés, les élus locaux et européens ; peuvent être consultés par référendum</div>`:""}
+    <div class="org-cols">${colonne("executif","Pouvoir exécutif")}${colonne("legislatif","Pouvoir législatif")}${colonne("judiciaire","Autorité judiciaire")}</div>
+    ${grille("controle","Contrôle et garants")}${grille("territoires","Collectivités territoriales")}${grille("europe","Europe")}
+  </div><div class="org-d" id="orgD" aria-live="polite"></div>`;
+  const detail=()=>{const x=by(ORGCUR);if(!x)return;
+    const sort=Lk.filter(l=>l.de===x.cle),entre=Lk.filter(l=>l.vers===x.cle),nom=k=>(by(k)||{nom:k}).nom;
+    const rel=(l,k)=>`<li><button type="button" class="org-l" data-k="${esc(k)}">${esc(nom(k))}</button> ${esc(l.rel)}${l.art?` <small>(${esc(l.art)})</small>`:""}</li>`;
+    document.getElementById("orgD").innerHTML=`<h3 style="--c:${esc(x.c)}">${esc(x.nom)}</h3><p>${esc(x.role)}</p>
+      <dl class="jb">${x.desig?`<div><dt>Désignation</dt><dd>${esc(x.desig)}</dd></div>`:""}${x.mandat?`<div><dt>Mandat</dt><dd>${esc(x.mandat)}</dd></div>`:""}${x.titulaire?`<div><dt>Aujourd’hui</dt><dd>${esc(x.titulaire)}</dd></div>`:""}</dl>
+      ${sort.length?`<h4>Ce que ${esc(x.nom.split(" (")[0])} peut faire</h4><ul class="org-rel">${sort.map(l=>`<li>→ ${esc(l.rel)} : <button type="button" class="org-l" data-k="${esc(l.vers)}">${esc(nom(l.vers))}</button>${l.art?` <small>(${esc(l.art)})</small>`:""}</li>`).join("")}</ul>`:""}
+      ${entre.length?`<h4>Ce qui s’exerce sur ${esc(x.nom.split(" (")[0])}</h4><ul class="org-rel">${entre.map(l=>rel(l,l.de)).join("")}</ul>`:""}
+      ${x.onglet&&document.getElementById(x.onglet)?`<p><button type="button" class="chip org-go" data-t="${esc(x.onglet)}">Voir l’onglet ${esc(document.getElementById("t-"+x.onglet).textContent)}</button></p>`:""}`;
+    box.querySelectorAll(".org-b").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===ORGCUR)));};
+  box.onclick=e=>{const b=e.target.closest(".org-b,.org-l");if(b){ORGCUR=b.dataset.k;detail();if(b.classList.contains("org-l"))document.getElementById("orgD").scrollIntoView({block:"nearest"});return;}
+    const g=e.target.closest(".org-go");if(g)showTab(g.dataset.t,true);};
+  detail();
+}
 /* ================= Navigation ================= */
 let TAB="sondages";
 function updHash(){try{history.replaceState(null,"","#"+TAB+"-"+Y);}catch(e){}}
@@ -738,7 +915,7 @@ function setEra(y,fromLoad){
   Y=y;ERA=ERAS[y];visible=new Set(ERA.visible);killCharts();
   document.getElementById("title").textContent=ERA.title;document.getElementById("eraSub").textContent=ERA.sub;
   document.querySelectorAll(".timewarp button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.y===y)));
-  renderPolls();renderAgeVote();renderPop();renderAgePop();renderInst();renderMedia();renderAgeMedia();renderLinks();renderAN();renderCompare();renderCit();renderPatri();renderJustice();renderFinance();if(!fromLoad)updHash();
+  renderPolls();renderAgeVote();renderPop();renderAgePop();renderInst();renderMedia();renderAgeMedia();renderLinks();renderAN();renderCompare();renderCit();renderPatri();renderJustice();renderFinance();renderOrg();renderCandidats();if(!fromLoad)updHash();
 }
 document.querySelectorAll(".timewarp button").forEach(b=>b.onclick=()=>{setEra(b.dataset.y);});
 const TABS=[...document.querySelectorAll('[role="tab"]')];
@@ -748,7 +925,7 @@ TABS.forEach(b=>b.onclick=()=>showTab(b.getAttribute("aria-controls"),true));
 /* ================= Démarrage ================= */
 (function start(){
   const h=(location.hash||"").slice(1).split("-");let y="2027",t="sondages";
-  if(["sondages","popularite","assemblee","comparer","patrimoine","justice","financement","citations","instituts","medias","liens"].includes(h[0]))t=h[0];if(ERAS[h[1]])y=h[1];
+  if(["sondages","popularite","assemblee","candidats","comparer","patrimoine","justice","financement","citations","instituts","medias","liens","informations"].includes(h[0]))t=h[0];if(ERAS[h[1]])y=h[1];
   setEra(y,true);showTab(t,false);
   if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>setEra(Y,true));
 })();

@@ -1,0 +1,56 @@
+# Chaque jour : votes de l'Assemblée nationale (open data officiel) et tonalité de la presse (GDELT).
+# Les fichiers data/scrutins.json et data/tonalite.json sont enregistrés dans le dépôt ; le script Apps Script
+# du Google Sheet les recopie dans le classeur à sa mise à jour suivante (toutes les 6 heures).
+name: Données quotidiennes (Assemblée, tonalité de la presse)
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: donnees-quotidiennes
+  cancel-in-progress: false
+jobs:
+  donnees:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Télécharger l'open data de l'Assemblée nationale
+        run: |
+          set -e
+          R=https://data.assemblee-nationale.fr/static/openData/repository/17
+          mkdir -p an && cd an
+          curl -fsSL -o scrutins.zip "$R/loi/scrutins/Scrutins.json.zip"
+          curl -fsSL -o amo.zip "$R/amo/deputes_senateurs_ministres_legislature/AMO20_dep_sen_min_tous_mandats_et_organes.json.zip"
+          curl -fsSL -o dossiers.zip "$R/loi/dossiers_legislatifs/Dossiers_Legislatifs.json.zip"
+          unzip -q scrutins.zip -d scrutins
+          unzip -q amo.zip -d amo
+          unzip -q dossiers.zip -d dossiers
+      - name: Votes de l'Assemblée
+        run: node scripts/importer-scrutins.mjs an data/scrutins.json
+      - name: Tonalité de la presse (GDELT)
+        # une panne de GDELT ne doit pas bloquer les votes de l'Assemblée
+        continue-on-error: true
+        timeout-minutes: 25
+        env:
+          TONALITE_BUDGET_MIN: "18"
+        run: node scripts/importer-tonalite.mjs data/snapshot.json data/tonalite.json
+      - name: Enregistrer
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/scrutins.json
+          if [ -f data/tonalite.json ]; then git add data/tonalite.json; fi
+          if git diff --cached --quiet; then echo "Rien de nouveau"; exit 0; fi
+          git commit -m "Données du $(date -u +%F) : votes de l'Assemblée et tonalité de la presse"
+          git push
+          # un push fait par le jeton du dépôt ne relance pas les autres workflows : on republie le site à la main
+          gh workflow run pages.yml --ref "${GITHUB_REF_NAME}"
+        env:
+          GH_TOKEN: ${{ github.token }}
