@@ -5,6 +5,7 @@ import fs from "node:fs";
 import vm from "node:vm";
 import { categorieScrutin, titreCourt, premierSignataire, auteurScrutin, lignesScrutin, cleTitre } from "../scripts/importer-scrutins.mjs";
 import { resumerTonalite, mediaDepuisUrl, nettoyerTitre, urlTonalite } from "../scripts/importer-tonalite.mjs";
+import { lireCandidatures, dateDeclaration, texteSimple } from "../scripts/importer-candidatures.mjs";
 
 const racine = new URL("../", import.meta.url);
 const lire = (f) => fs.readFileSync(new URL(f, racine), "utf8");
@@ -105,4 +106,39 @@ test("organigramme : toutes les relations relient des cases existantes", () => {
   const M = ctx.construireModele(snap), cles = new Set(M.INSTIT.items.map((x) => x.cle));
   assert.ok(cles.has("president") && cles.has("assemblee") && cles.has("conseil_constitutionnel"));
   for (const l of M.INSTIT.liens) assert.ok(cles.has(l.de) && cles.has(l.vers), `${l.de} → ${l.vers}`);
+});
+
+test("candidatures : dates et lignes lues sur Wikipédia", () => {
+  assert.equal(dateDeclaration("Il annonce sa candidature le {{date|9|11|2026}}, se positionnant"), "2026-11-09");
+  assert.equal(dateDeclaration("Le {{date|8 décembre 2025}}, elle annonce sa candidature"), "2025-12-08");
+  assert.equal(dateDeclaration("Il annonce sa candidature le 23/08/2026"), "2026-08-23");
+  // une date de carrière avant l'annonce ne doit pas être prise
+  assert.equal(dateDeclaration("Maire <small>(2008-2017)</small> {{date|24 septembre 2017}} ---- Il se déclare candidat le {{Date|24 septembre 2026}}"), "2026-09-24");
+  assert.equal(dateDeclaration("Président de Renaissance (depuis décembre 2024)"), "");
+  assert.equal(texteSimple("le {{date|2|10|2026}} à [[Paris|la capitale]]"), "le 2 octobre 2026 à la capitale");
+  const wiki = `== Candidats déclarés ==
+{| class="wikitable"
+|-
+! {{TriNom|Teddy|Riner}}<br>{{Âge|7|4|1989|18|04|2027}}<br>[[Indépendant (politique)|Sans étiquette]]
+| ''Aucune''
+| Il annonce sa candidature le {{date|9|11|2026}}, se positionnant « ni à droite, ni à gauche »<ref>x</ref>
+|}
+== Candidats pressentis ==
+{| class="wikitable"
+|-
+! [[Christine Lagarde]]<br>{{Âge|1|1|1956|18|4|2027}}<br>[[Divers droite]]
+| * Présidente de la BCE (depuis 2019)
+|}
+== Candidatures retirées ==
+* [[Clémentine Autain]] ([[L'Après]]), députée. Elle la retire le 11 juillet 2026.
+== Notes ==`;
+  assert.deepEqual(lireCandidatures(wiki).slice(1).map((r) => r.slice(0, 4)), [
+    ["déclaré", "Teddy Riner", "Sans étiquette", "2026-11-09"],
+    ["pressenti", "Christine Lagarde", "Divers droite", ""],
+    ["retiré", "Clémentine Autain", "L'Après", "2026-07-11"],
+  ]);
+  const j = JSON.parse(lire("data/declarations.json"));
+  const M = ctx.construireModele({ onglets: { ...snap.onglets, ...j.onglets } });
+  assert.ok(M.DECLARATIONS.filter((d) => d.statut === "déclaré").length >= 20);
+  assert.ok(M.DECLARATIONS.some((d) => d.nom === "Teddy Riner" && d.date === "2026-11-09"));
 });

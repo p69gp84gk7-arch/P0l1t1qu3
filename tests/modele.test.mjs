@@ -48,13 +48,21 @@ test("sondages 2027 : ceux de la page d'origine, plus les ajouts Wikipédia", ()
   for (const p of orig) assert.ok(model.some((q) => JSON.stringify(q) === JSON.stringify(p)), `${p.inst} ${p.d}`);
 });
 
+// Candidats 2027 : ceux de la page d'origine, avec les changements faits depuis (Marine Le Pen redevenue éligible
+// en juillet 2026 : « Le Pen / Bardella » devient « Le Pen »), plus les personnalités ajoutées depuis.
+const C27_CHANGES = { rn: { n: "Le Pen", s: undefined } };
+const c27Attendus = (C) => Object.fromEntries(Object.entries(plain(C)).map(([k, v]) => [k, plain({ ...v, ...(C27_CHANGES[k] || {}) })]));
+const c27Origine = (C) => Object.fromEntries(Object.entries(plain(C)).filter(([k]) => k in ORIG.C27));
+
 test("candidats, élections et résultats", () => {
-  assert.deepEqual(plain(M.C27), plain(ORIG.C27));
+  assert.deepEqual(c27Origine(M.C27), c27Attendus(ORIG.C27));
+  for (const k of ["lagarde", "polony", "riner", "ruffin"]) assert.ok(M.C27[k], k);
   for (const y of ["2017", "2022", "2027"]) {
     const a = M.ERAS[y], b = ORIG.ERAS[y];
     for (const k of ["title", "start", "end", "live", "note", "take"]) assert.equal(a[k] ?? false, b[k] ?? false, `${y}.${k}`);
     assert.deepEqual([...a.visible].sort(), [...b.visible].sort());
-    assert.deepEqual(plain(a.C), plain(b.C));
+    if (y === "2027") assert.deepEqual(c27Origine(a.C), c27Attendus(b.C));
+    else assert.deepEqual(plain(a.C), plain(b.C));
     // la page d'origine, plus les médias et instituts ajoutés depuis (scripts/ajouts-medias-instituts.mjs)
     const instAjoutes = new Set(AJOUTS_INSTITUTS.filter((r) => r[0] === y).map((r) => r[2]));
     assert.deepEqual(plain(a.inst).filter((i) => !instAjoutes.has(i.k)), plain(b.inst).map((i) => ({ ...i, bill: !!i.bill })));
@@ -100,10 +108,16 @@ test("citations", () => {
 });
 
 test("duels de second tour 2027 proches de la page d'origine", () => {
+  // même calcul, limité aux sondages connus de la page d'origine (les suivants font évoluer les moyennes)
+  const fin = ORIG.RAW.p27.reduce((m, p) => (p.d > m ? p.d : m), "");
+  const lignes = snap.onglets.second_tour, h = lignes[0], iE = h.indexOf("election"), iD = h.indexOf("date");
+  const avant = lignes.slice(1).filter((r) => String(r[iE]) === "2027" && String(r[iD]).slice(0, 10) <= fin)
+    .map((r) => Object.fromEntries(h.map((k, i) => [k, r[i]])));
+  const r2 = ctx.duels2027(avant);
   const nom = (k) => ({ "le-pen": "le pen", melenchon: "melenchon", philippe: "philippe", attal: "attal", glucksmann: "glucksmann", hollande: "hollande", retailleau: "retailleau" })[k];
   const sa = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
   for (const o of ORIG.RAW.r2_27) {
-    const m = M.RAW.r2_27.find((d) => [sa(d.a), sa(d.b)].sort().join() === [nom(o.a), nom(o.b)].sort().join());
+    const m = r2.find((d) => [sa(d.a), sa(d.b)].sort().join() === [nom(o.a), nom(o.b)].sort().join());
     assert.ok(m, `${o.a}-${o.b}`);
     const va = sa(m.a) === nom(o.a) ? m.avgA : m.avgB;
     assert.ok(Math.abs(va - o.avgA) <= 1, `${o.a}-${o.b} : ${va} contre ${o.avgA}`);

@@ -1,8 +1,8 @@
 /* Service worker : l'application reste consultable hors connexion
    (dernière version vue), tout en allant toujours chercher la plus récente en ligne. */
-const CACHE = "presidentielles-v10";
+const CACHE = "presidentielles-v11";
 const COQUILLE = ["./", "index.html", "config.js", "assets/styles.css", "assets/donnees.js", "assets/app.js",
-  "assets/demarrage.js", "data/snapshot.json", "data/scrutins.json", "manifest.webmanifest", "assets/icone.svg"];
+  "assets/demarrage.js", "data/snapshot.json", "data/scrutins.json", "data/declarations.json", "manifest.webmanifest", "assets/icone.svg"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(COQUILLE)).then(() => self.skipWaiting()));

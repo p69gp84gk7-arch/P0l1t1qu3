@@ -58,3 +58,8 @@ test("doublons : même institut à 3 jours près", () => {
   assert.equal(ctx.wikiMemeSondage({ inst: "Harris-Interactive", d: "2026-10-21" }, { inst: "Harris", d: "2026-10-19" }), true);
   assert.equal(ctx.wikiMemeSondage({ inst: "Ifop", d: "2026-10-21" }, { inst: "Ifop", d: "2026-10-14" }), false);
 });
+
+test("taille d'échantillon : {{formatnum:…}} et {{Formatnum|…}}", () => {
+  assert.equal(ctx.wikiNombre("{{formatnum:2101}}"), 2101);
+  assert.equal(ctx.wikiNombre("{{Formatnum|1164}}"), 1164);
+});

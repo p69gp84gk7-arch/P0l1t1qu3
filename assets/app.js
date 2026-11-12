@@ -1,6 +1,6 @@
 /* Application : rendu des onglets à partir des données chargées (voir donnees.js). */
 function lancerApplication(D){
-const {RAW,AGE,POPAGE,SV,PATRI,JUSTICE,FINANCE,SCRUTINS,TONALITE,INSTIT,FICHES,PUB,C27,POPC,POPN,ERAS,TVAGE,AN,VOTE,MTYPE,MOWN,PARAM,couleurDuel}=D;
+const {RAW,AGE,POPAGE,SV,PATRI,JUSTICE,FINANCE,SCRUTINS,TONALITE,INSTIT,FICHES,DECLARATIONS,PUB,C27,POPC,POPN,ERAS,TVAGE,AN,VOTE,MTYPE,MOWN,PARAM,couleurDuel}=D;
 const POS=["Gauche radicale","Gauche","Centre-gauche","Centre","Centre-droit","Droite","Droite conserv. / identitaire"];
 const POSC=["#9F1239","#E11D48","#F472B6","#A78BFA","#60A5FA","#2563EB","#1E3A8A"];
 const TYPES=["TV","Radio","Presse","Magazine","En ligne"];
@@ -65,11 +65,20 @@ function renderHero(P){
   if(ERA.live){
     const endT=Math.max(toD(ERA.end),toD(P[P.length-1].d));const now={},ago={};
     keysOf().forEach(k=>{now[k]=avgAt(P,k,endT,30);ago[k]=avgAt(P,k,endT-92*DAY,30);});
+    // dernier sondage de chaque institut sur 30 jours : une personnalité testée dans moins de la moitié d'entre eux
+    // est listée à part (sa moyenne repose sur trop peu de mesures pour être comparée aux autres)
+    const derniers={};P.forEach(p=>{const t=toD(p.d);if(t<=endT&&endT-t<=30*DAY)derniers[p.inst]=p;});
+    const nbInst=Object.keys(derniers).length,teste=k=>Object.values(derniers).filter(p=>p.s[k]!=null).length;
+    // absente des derniers sondages de chaque institut (plus testée) : on ne l'affiche plus
+    const partiels={};keysOf().forEach(k=>{if(now[k]!=null&&teste(k)<nbInst/2){if(teste(k))partiels[k]=now[k];now[k]=null;}});
     document.getElementById("heroTitle").textContent="La moyenne aujourd’hui, au premier tour";
     document.getElementById("heroLede").textContent="Moyenne des sondages des 30 derniers jours (le plus récent de chaque institut compte une fois). Entre parenthèses : l’évolution sur trois mois.";
     bar(now).forEach(k=>{const v=now[k],a=ago[k];let d;if(a!=null){const x=Math.round((v-a)*10)/10;d=`<span class="dl ${x>0.4?"upc":x<-0.4?"dnc":"flat"}">(${x>0?"+":""}${fmt(x)})</span>`;}else d=`<span class="dl flat">(nouveau)</span>`;
       leg.appendChild(el("div",{class:"cand"},`<i style="background:${ERA.C[k].c}"></i><span class="nm">${k==="rn"?"Le Pen":ERA.C[k].n}</span><span class="sc">${fmt(Math.round(v*10)/10)} %</span>${d}`));});
-    ERA._now=now;
+    const ks=Object.keys(partiels).sort((a,b)=>partiels[b]-partiels[a]);
+    if(ks.length){leg.appendChild(el("p",{class:"hint",style:"margin:10px 0 2px;width:100%"},"Testés dans moins de la moitié des sondages récents, hors de la barre car leur moyenne repose sur peu de mesures (entre parenthèses : nombre de sondages, sur le dernier de chaque institut) :"));
+      ks.forEach(k=>leg.appendChild(el("div",{class:"cand partiel"},`<i style="background:${ERA.C[k].c}"></i><span class="nm">${ERA.C[k].n}</span><span class="sc">${fmt(Math.round(partiels[k]*10)/10)} %</span><span class="dl flat" title="testé dans ${teste(k)} des ${nbInst} derniers sondages">(${teste(k)} sur ${nbInst})</span>`)));}
+    ERA._now={...now,...partiels};
   }else{
     const t=toD(ERA.results.d),fin={};keysOf().forEach(k=>{const v=avgAt(P,k,t,9);if(v!=null)fin[k]=v;});
     document.getElementById("heroTitle").textContent="Derniers sondages contre résultat réel";
@@ -877,6 +886,25 @@ function renderCandidats(){
     box.querySelectorAll(".cand-go").forEach(b=>b.onclick=()=>showTab(b.dataset.t,true));
   }
   fiche();
+  renderDeclarations(L);
+}
+/* Liste de toutes les candidatures (élection en cours), d'après Wikipédia, mise à jour chaque jour. */
+function renderDeclarations(L){
+  const box=document.getElementById("declBox");
+  if(!ERA.live||!DECLARATIONS.length){box.hidden=true;return;}
+  box.hidden=false;
+  const avecFiche=Object.fromEntries(L.map(({f})=>[sansAcc(f.nom),f.p]));
+  const groupes=[["déclaré","Candidats déclarés"],["pressenti","Pressentis, pas encore déclarés"],["retiré","Candidatures retirées"]];
+  const date=d=>!d?"–":d.length===10?frDate(d):d.length===7?new Date(d+"-15T12:00:00").toLocaleDateString("fr-FR",{month:"long",year:"numeric"}):d;
+  const nb=s=>DECLARATIONS.filter(d=>d.statut===s).length;
+  box.innerHTML=`<h2>Tous les candidats</h2>
+    <p class="lede">${nb("déclaré")} candidats déclarés et ${nb("pressenti")} personnalités pressenties, d’après Wikipédia (liste mise à jour chaque jour). Pour se présenter, il faudra réunir 500 parrainages d’élus, validés par le Conseil constitutionnel, qui publiera la liste officielle en mars 2027. Les noms soulignés ont une fiche ci-dessus et sont testés dans les sondages.</p>
+    ${groupes.filter(([s])=>nb(s)).map(([s,titre])=>`<h3 style="font-size:1rem;margin:14px 0 4px">${titre}</h3>
+      <div class="scroll"><table><thead><tr><th>Nom</th><th>Parti ou soutien</th><th>${s==="retiré"?"Retrait":"Annonce"}</th></tr></thead><tbody>${DECLARATIONS.filter(d=>d.statut===s)
+        .sort((a,b)=>s==="pressenti"?a.nom.localeCompare(b.nom,"fr"):(b.date||"").localeCompare(a.date||""))
+        .map(d=>{const p=avecFiche[sansAcc(d.nom)];return `<tr><td>${p?`<button type="button" class="org-l decl-f" data-p="${esc(p)}">${esc(d.nom)}</button>`:d.lien?`<a href="${esc(d.lien)}" target="_blank" rel="noopener">${esc(d.nom)}</a>`:esc(d.nom)}</td><td>${esc(d.parti)}</td><td style="white-space:nowrap">${date(d.date)}</td></tr>`;}).join("")}</tbody></table></div>`).join("")}
+    <p class="hint">Source : Wikipédia, « Candidatures à l’élection présidentielle française de 2027 » (CC BY-SA 4.0).</p>`;
+  box.querySelectorAll(".decl-f").forEach(b=>b.onclick=()=>{CANDCUR=b.dataset.p;renderCandidats();document.getElementById("candidats").scrollIntoView({behavior:"smooth"});});
 }
 /* ================= Informations : organigramme du pouvoir ================= */
 let ORGCUR="president";

@@ -31,7 +31,8 @@ function wikiInstitut(nom) {
 function wikiTexte(s) {
   s = String(s || "");
   s = s.replace(/<ref[^>]*\/>/gi, "").replace(/<ref[^>]*>[\s\S]*?<\/ref>/gi, "");
-  s = s.replace(/\{\{\s*formatnum\s*:\s*([^}]*)\}\}/gi, "$1");
+  // {{formatnum:982}} ou {{Formatnum|982}}
+  s = s.replace(/\{\{\s*formatnum\s*[:|]\s*([^}|]*)\}\}/gi, "$1");
   s = s.replace(/\{\{\s*(?:blanc|nobr|nowrap)\s*\|([^{}]*)\}\}/gi, "$1");
   s = s.replace(/\{\{[^{}]*\}\}/g, "");
   s = s.replace(/\[\[(?:[^|\]]*\|)?([^\]]*)\]\]/g, "$1");
