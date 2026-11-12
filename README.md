@@ -10,7 +10,7 @@ Wikipédia ──(toutes les 6 h)──▶ Google Sheet ──(API JSON Apps Scr
                                     ▲    ▲                                    │
                  modifications à la main  │                    secours hors ligne : data/snapshot.json
                                           │
-open data de l'Assemblée, GDELT ──(GitHub, chaque jour)──▶ data/scrutins.json, data/tonalite.json
+open data de l'Assemblée, GDELT, Wikipédia ──(GitHub, chaque jour)──▶ data/scrutins.json, data/tonalite.json, data/declarations.json
 ```
 
 Les votes de l’Assemblée et le ton de la presse sont préparés chaque jour par une tâche GitHub
@@ -116,6 +116,11 @@ Sur téléphone, « Ajouter à l’écran d’accueil » installe l’applicatio
   Actions du dépôt, bouton *Run workflow* pour la lancer tout de suite) ; le script recopie ses fichiers dans le
   classeur à chaque mise à jour, ou tout de suite par le menu **Sondages > Recopier les votes de l’Assemblée et la
   tonalité de la presse**. Ces onglets sont réécrits à chaque fois : ne pas les modifier à la main.
+- **Liste des candidatures 2027** (onglet `declarations` : déclarés, pressentis, retirés) : rien à faire, elle est
+  relue chaque jour dans l’article Wikipédia « Candidatures à l’élection présidentielle française de 2027 ».
+- **Nouvelle personnalité dans les sondages** : le script l’ajoute à `candidats` avec `affiche = non`. Pour l’afficher,
+  passer `affiche` à `oui`, choisir une couleur et un parti ; `visible = oui` l’affiche aussi par défaut sur la courbe.
+  Une personnalité testée dans moins de la moitié des sondages récents est listée à part sous la moyenne.
 - **Fiches des candidats** (onglets `fiches`, `carrieres`, `parcours_electoral`) et **organigramme du pouvoir**
   (`institutions`, `institutions_liens`) : à la main. Une nouvelle candidature se déclare dans la colonne
   `candidatures` de `fiches` (« 2027:clé », la clé de l’onglet `candidats`) ; changer le titulaire d’une fonction
@@ -149,6 +154,7 @@ npm test    # tests du parseur Wikipédia et de la conversion des onglets
 | `scripts/patrimoine-initial.mjs` | patrimoine déclaré des candidats 2017 et 2022 (sources et méthode dans le fichier) |
 | `scripts/importer-scrutins.mjs` | votes de l’Assemblée : open data officiel → `data/scrutins.json` (lancé chaque jour par GitHub) |
 | `scripts/importer-tonalite.mjs` | ton des articles qui citent chaque personnalité (GDELT) → `data/tonalite.json` (chaque jour) |
+| `scripts/importer-candidatures.mjs` | liste des candidatures déclarées, pressenties et retirées (Wikipédia) → `data/declarations.json` (chaque jour) |
 | `scripts/candidats-initial.mjs` | fiches des candidats : biographie, carrière, résultats passés, photos Wikimedia Commons |
 | `scripts/institutions-initial.mjs` | organigramme du pouvoir (Constitution de 1958) |
 | `scripts/importer-wikipedia.mjs` | applique la même mise à jour Wikipédia au fichier de secours |

@@ -312,7 +312,8 @@ function wikiInstitut(nom) {
 function wikiTexte(s) {
   s = String(s || "");
   s = s.replace(/<ref[^>]*\/>/gi, "").replace(/<ref[^>]*>[\s\S]*?<\/ref>/gi, "");
-  s = s.replace(/\{\{\s*formatnum\s*:\s*([^}]*)\}\}/gi, "$1");
+  // {{formatnum:982}} ou {{Formatnum|982}}
+  s = s.replace(/\{\{\s*formatnum\s*[:|]\s*([^}|]*)\}\}/gi, "$1");
   s = s.replace(/\{\{\s*(?:blanc|nobr|nowrap)\s*\|([^{}]*)\}\}/gi, "$1");
   s = s.replace(/\{\{[^{}]*\}\}/g, "");
   s = s.replace(/\[\[(?:[^|\]]*\|)?([^\]]*)\]\]/g, "$1");
@@ -853,12 +854,13 @@ function patrimoineMiseAJour(manuelle) {
  * Données préparées chaque jour sur GitHub (.github/workflows/donnees-quotidiennes.yml) et recopiées dans le
  * classeur à chaque mise à jour automatique :
  *  - data/scrutins.json : votes de l'Assemblée nationale (onglets scrutins et scrutins_groupes) ;
- *  - data/tonalite.json : tonalité de la presse qui cite chaque personnalité (onglets tonalite et tonalite_articles).
+ *  - data/tonalite.json : tonalité de la presse qui cite chaque personnalité (onglets tonalite et tonalite_articles) ;
+ *  - data/declarations.json : candidatures déclarées, pressenties et retirées d'après Wikipédia (onglet declarations).
  * Ces fichiers sont trop lourds à fabriquer ici (l'open data de l'Assemblée pèse 200 Mo décompressé, et GDELT
  * limite le nombre de requêtes), d'où ce passage par GitHub.
  */
 
-var FICHIERS_GITHUB = ["data/scrutins.json", "data/tonalite.json"];
+var FICHIERS_GITHUB = ["data/scrutins.json", "data/tonalite.json", "data/declarations.json"];
 
 function donneesGitHubMiseAJourManuelle() {
   SpreadsheetApp.getUi().alert(donneesGitHubMiseAJour(true).message);

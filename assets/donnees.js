@@ -19,7 +19,7 @@ async function chargerJSON(url, delai) {
 
 // Fichiers mis à jour chaque jour sur GitHub et recopiés dans le Sheet par le script : on prend la version la plus
 // récente des deux (utile tant que le script du Sheet n'a pas été mis à jour).
-const DONNEES_QUOTIDIENNES = ["data/scrutins.json", "data/tonalite.json"];
+const DONNEES_QUOTIDIENNES = ["data/scrutins.json", "data/tonalite.json", "data/declarations.json"];
 
 async function completerDonnees(json) {
   const P = Object.fromEntries(lignes(json.onglets, "parametres").map((r) => [txt(r.cle), txt(r.valeur)]));
@@ -332,6 +332,11 @@ function construireModele(json) {
     elections: (parc.get(txt(r.personne)) || []).map((x) => ({ a: txt(x.annee), e: txt(x.election), tour: txt(x.tour), score: num(x.score), res: txt(x.resultat) })),
   }));
 
+  /* candidatures à la présidentielle en cours (Wikipédia, chaque jour) */
+  const DECLARATIONS = L("declarations").filter((r) => txt(r.nom)).map((r) => ({
+    statut: txt(r.statut), nom: txt(r.nom), parti: txt(r.parti), date: txt(r.date).slice(0, 10), detail: txt(r.detail), lien: txt(r.lien),
+  }));
+
   /* organigramme du pouvoir (onglet Informations) */
   const INSTIT = {
     items: L("institutions").filter((r) => txt(r.cle)).map((r) => ({
@@ -342,7 +347,7 @@ function construireModele(json) {
   };
 
   return {
-    RAW, AGE, POPAGE, SV, PATRI, JUSTICE, FINANCE, SCRUTINS, TONALITE, INSTIT, FICHES, PUB: L("acteurs_publics").map((r) => ({ n: txt(r.nom), t: txt(r.type), r: txt(r.role) })),
+    RAW, AGE, POPAGE, SV, PATRI, JUSTICE, FINANCE, SCRUTINS, TONALITE, INSTIT, FICHES, DECLARATIONS, PUB: L("acteurs_publics").map((r) => ({ n: txt(r.nom), t: txt(r.type), r: txt(r.role) })),
     C27: C["2027"] || {}, POPC, POPN, ERAS, VOTE, AN, MTYPE, MOWN, PARAM, couleurDuel,
     TVAGE: L("audience_age").map((r) => [txt(r.chaine), num(r.age_moyen), oui(r.chaine_info) ? "i" : "g"]),
   };

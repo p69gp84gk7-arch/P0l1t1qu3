@@ -34,6 +34,9 @@ jobs:
           unzip -q dossiers.zip -d dossiers
       - name: Votes de l'Assemblée
         run: node scripts/importer-scrutins.mjs an data/scrutins.json
+      - name: Liste des candidatures (Wikipédia)
+        continue-on-error: true
+        run: node scripts/importer-candidatures.mjs "" data/declarations.json
       - name: Tonalité de la presse (GDELT)
         # une panne de GDELT ne doit pas bloquer les votes de l'Assemblée
         continue-on-error: true
@@ -45,7 +48,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/scrutins.json
+          git add data/scrutins.json data/declarations.json
           if [ -f data/tonalite.json ]; then git add data/tonalite.json; fi
           if git diff --cached --quiet; then echo "Rien de nouveau"; exit 0; fi
           git commit -m "Données du $(date -u +%F) : votes de l'Assemblée et tonalité de la presse"
