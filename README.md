@@ -127,6 +127,10 @@ Sur téléphone, « Ajouter à l’écran d’accueil » installe l’applicatio
   (nouveau Premier ministre…) dans la colonne `titulaire` de `institutions`.
 - **Popularité, groupes de l’Assemblée, médias, citations** : mises à jour manuelles dans les onglets correspondants.
 - **Suspendre la mise à jour auto** : `parametres > maj_auto = non`.
+- **Lecture de Wikipédia** : le script utilise la dernière version du lecteur publiée sur GitHub
+  (`apps-script/Wikipedia.gs`), pour suivre les changements de présentation des tableaux sans recoller le script ;
+  sans accès à GitHub, il garde la version installée. Désactiver : `parametres > lecteur_github = non`. Un sondage
+  dont le RN n'a pas pu être lu est ignoré et signalé dans le `journal` (tableau mal lu).
 
 Règles du classeur : ne pas renommer les onglets ni les en-têtes ; dates `AAAA-MM-JJ`, mois `AAAA-MM`.
 
