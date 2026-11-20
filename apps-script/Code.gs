@@ -160,7 +160,8 @@ function miseAJour() {
     });
     if (rep.getResponseCode() !== 200) throw new Error("Wikipédia a répondu " + rep.getResponseCode());
     var wikicode = rep.getContentText("UTF-8");
-    var n1 = importerPremierTour(wikicode), n2 = importerSecondTour(wikicode);
+    var W = lecteurWikipedia();
+    var n1 = importerPremierTour(wikicode, W), n2 = importerSecondTour(wikicode, W);
     ecrireParametre("derniere_maj", "'" + Utilities.formatDate(new Date(), classeur().getSpreadsheetTimeZone(), "yyyy-MM-dd HH:mm"));
     var msg = n1.ajoutes + " sondage(s) de 1er tour et " + n2 + " de 2nd tour ajoutés." +
       (n1.nouveaux.length ? " Nouveaux candidats à vérifier dans l’onglet candidats : " + n1.nouveaux.join(", ") + "." : "");
@@ -175,14 +176,43 @@ function miseAJour() {
   }
 }
 
-function importerPremierTour(wikicode) {
+/**
+ * Lecteur des tableaux Wikipédia : la dernière version publiée sur GitHub (apps-script/Wikipedia.gs), pour suivre
+ * les changements de présentation de Wikipédia sans recoller le script ; à défaut, la version installée ici.
+ * Désactivable avec le paramètre lecteur_github = non.
+ */
+function lecteurWikipedia() {
+  var local = { premier: wikiSondagesPremierTour, second: wikiSondagesSecondTour, meme: wikiMemeSondage,
+    sansAccents: wikiSansAccents, cleNouvelle: wikiCleNouvelle, nomValide: typeof wikiNomValide === "function" ? wikiNomValide : function () { return true; }, source: "script" };
+  if (String(parametre("lecteur_github") || "oui").toLowerCase() === "non") return local;
+  try {
+    var branche = String(parametre("script_branche") || "main");
+    var rep = UrlFetchApp.fetch("https://raw.githubusercontent.com/" + DEPOT_SCRIPT + "/" + branche + "/apps-script/Wikipedia.gs?t=" + Date.now(), { muteHttpExceptions: true });
+    if (rep.getResponseCode() !== 200) return local;
+    var w = new Function(rep.getContentText("UTF-8") + "\n;return { premier: wikiSondagesPremierTour, second: wikiSondagesSecondTour, meme: wikiMemeSondage," +
+      " sansAccents: wikiSansAccents, cleNouvelle: wikiCleNouvelle, nomValide: typeof wikiNomValide === 'function' ? wikiNomValide : function () { return true; } };")();
+    if (typeof w.premier !== "function" || typeof w.second !== "function") return local;
+    w.source = "GitHub";
+    return w;
+  } catch (err) {
+    return local;
+  }
+}
+
+function importerPremierTour(wikicode, W) {
+  W = W || lecteurWikipedia();
   var ss = classeur(), sh = ss.getSheetByName("sondages_2027");
   var candidats = lignes("candidats").filter(function (c) { return String(c.election) === "2027"; })
     .map(function (c) { return { cle: c.cle, nom: c.nom, alias: c.alias_wikipedia }; });
   var depuis = String(parametre("sondages_2027_depuis") || "2026-01-01");
-  var sondages = wikiSondagesPremierTour(wikicode, { candidats: candidats, depuis: depuis });
-  var existants = lignes("sondages_2027").map(function (r) { return { inst: r.institut, d: texteDate(r.fin_terrain) }; });
-  var nouveaux = sondages.filter(function (p) { return !existants.some(function (e) { return wikiMemeSondage(p, e); }); });
+  var sondages = W.premier(wikicode, { candidats: candidats, depuis: depuis });
+  var existants = lignes("sondages_2027").map(function (r) { return { inst: r.institut, d: texteDate(r.fin_terrain), n: r.echantillon }; });
+  // garde-fou : tous les sondages 2027 testent le RN ; sans lui, la lecture du tableau a échoué (présentation changée)
+  var illisibles = sondages.filter(function (p) { return p.s.rn == null; });
+  if (illisibles.length) journal("lecture Wikipédia", illisibles.length + " sondage(s) ignoré(s), tableau mal lu : " +
+    illisibles.map(function (p) { return p.inst + " " + p.d; }).join(", "));
+  sondages = sondages.filter(function (p) { return p.s.rn != null; });
+  var nouveaux = sondages.filter(function (p) { return !existants.some(function (e) { return W.meme(p, e); }); });
   if (!nouveaux.length) return { ajoutes: 0, nouveaux: [] };
 
   // Candidats inconnus : nouvelle colonne dans sondages_2027 et nouvelle ligne (non affichée) dans candidats.
@@ -194,7 +224,7 @@ function importerPremierTour(wikicode) {
       sh.insertColumnBefore(avant);
       sh.getRange(1, avant).setValue(cle);
       entete.splice(avant - 1, 0, cle);
-      var nom = (p.inconnus.filter(function (n) { return wikiCleNouvelle(n) === cle; })[0]) || cle;
+      var nom = (p.inconnus.filter(function (n) { return W.cleNouvelle(n) === cle; })[0]) || cle;
       ajoutsCandidats.push(["2027", cle, nom, null, null, "#A3A3A3", "non", "non", nom]);
     });
   });
@@ -223,14 +253,15 @@ function importerPremierTour(wikicode) {
   return { ajoutes: lignesAjout.length, nouveaux: ajoutsCandidats.map(function (c) { return c[2]; }) };
 }
 
-function importerSecondTour(wikicode) {
+function importerSecondTour(wikicode, W) {
+  W = W || lecteurWikipedia();
   var sh = classeur().getSheetByName("second_tour");
-  var duels = wikiSondagesSecondTour(wikicode, new Date());
+  var duels = W.second(wikicode, new Date());
   var existants = lignes("second_tour").filter(function (r) { return String(r.election) === "2027"; })
     .map(function (r) { return { inst: r.institut, d: texteDate(r.date), a: r.candidat_a, b: r.candidat_b }; });
   var nouveaux = duels.filter(function (x) {
     return !existants.some(function (e) {
-      return wikiSansAccents(e.a) === wikiSansAccents(x.a) && wikiSansAccents(e.b) === wikiSansAccents(x.b) && wikiMemeSondage(x, e);
+      return W.sansAccents(e.a) === W.sansAccents(x.a) && W.sansAccents(e.b) === W.sansAccents(x.b) && W.meme(x, e);
     });
   });
   if (!nouveaux.length) return 0;

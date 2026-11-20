@@ -27,10 +27,31 @@ function wikiInstitut(nom) {
   return String(nom).trim();
 }
 
+/** Retire les images [[Fichier:…]], [[File:…]], [[Image:…]] (qui peuvent contenir d'autres liens). */
+function wikiSansImages(s) {
+  var out = String(s || ""), i;
+  while ((i = out.search(/\[\[\s*(?:Fichier|File|Image)\s*:/i)) >= 0) {
+    var prof = 0, j = i;
+    for (; j < out.length - 1; j++) {
+      if (out[j] === "[" && out[j + 1] === "[") { prof++; j++; }
+      else if (out[j] === "]" && out[j + 1] === "]") { prof--; j++; if (prof === 0) break; }
+    }
+    out = out.slice(0, i) + out.slice(j + 1);
+  }
+  return out;
+}
+
+/** Nom de candidat plausible (pas un reste de balisage). */
+function wikiNomValide(nom) {
+  return !!nom && !/px|=|\||\[|\]|\{|\}|fichier|file:/i.test(nom) && /[A-Za-zÀ-ÿ]{2}/.test(nom);
+}
+
 /** Supprime le balisage wiki courant et renvoie du texte simple. */
 function wikiTexte(s) {
   s = String(s || "");
   s = s.replace(/<ref[^>]*\/>/gi, "").replace(/<ref[^>]*>[\s\S]*?<\/ref>/gi, "");
+  // images ([[Fichier:…|alt=…|50x50px]]) : jamais du texte à lire
+  s = wikiSansImages(s);
   // {{formatnum:982}} ou {{Formatnum|982}}
   s = s.replace(/\{\{\s*formatnum\s*[:|]\s*([^}|]*)\}\}/gi, "$1");
   s = s.replace(/\{\{\s*(?:blanc|nobr|nowrap)\s*\|([^{}]*)\}\}/gi, "$1");
@@ -185,7 +206,11 @@ function wikiSondagesPremierTour(wikicode, options) {
     if (!annee) return;
     var entetes = t.lignes.filter(function (l) { return l.length && l.every(function (c) { return c && c.entete; }); });
     if (!entetes.length) return;
-    var noms = entetes[entetes.length - 1].map(function (c) { return wikiTexte(c.brut.split(/<br\s*\/?>/i)[0]); });
+    // en-tête : « [[Fichier:…]]<br>[[Nom complet|Nom]]<br><small>(Parti)</small> » ou seulement « Nom<br>(Parti) »
+    var noms = entetes[entetes.length - 1].map(function (c) {
+      var parts = wikiSansImages(c.brut).split(/<br\s*\/?>/i).map(wikiTexte).filter(Boolean);
+      return parts[0] || "";
+    });
     var iInst = noms.findIndex(function (n) { return /sondeur|institut/i.test(n); }),
       iDate = noms.findIndex(function (n) { return /^date/i.test(n); }),
       iN = noms.findIndex(function (n) { return /chantillon/i.test(n); });
@@ -206,7 +231,7 @@ function wikiSondagesPremierTour(wikicode, options) {
           var col = noms[i] || "", estAutres = /autres|divers/i.test(col);
           wikiValeurs(l[i].brut).forEach(function (x) {
             var nom = x.nom || (estAutres ? "" : col);
-            if (!nom) return;
+            if (!wikiNomValide(nom)) return;
             var cle = alias[wikiSansAccents(nom)] || alias[wikiSansAccents(nom).split(" ").pop()];
             if (!cle) { cle = wikiCleNouvelle(nom); inconnus.push(nom); }
             if (s[cle] == null) s[cle] = x.v;
@@ -239,7 +264,11 @@ function wikiSondagesSecondTour(wikicode, reference) {
     if (!/second tour/i.test(chemin) || !/d[ée]clar[ée]s ou pressentis/i.test(chemin)) return;
     var entetes = t.lignes.filter(function (l) { return l.length && l.every(function (c) { return c && c.entete; }); });
     if (!entetes.length) return;
-    var noms = entetes[entetes.length - 1].map(function (c) { return wikiTexte(c.brut.split(/<br\s*\/?>/i)[0]); });
+    // en-tête : « [[Fichier:…]]<br>[[Nom complet|Nom]]<br><small>(Parti)</small> » ou seulement « Nom<br>(Parti) »
+    var noms = entetes[entetes.length - 1].map(function (c) {
+      var parts = wikiSansImages(c.brut).split(/<br\s*\/?>/i).map(wikiTexte).filter(Boolean);
+      return parts[0] || "";
+    });
     var iInst = noms.findIndex(function (n) { return /sondeur|institut/i.test(n); }),
       iDate = noms.findIndex(function (n) { return /^date/i.test(n); }),
       iN = noms.findIndex(function (n) { return /chantillon/i.test(n); });
@@ -262,6 +291,9 @@ function wikiSondagesSecondTour(wikicode, reference) {
 /** Vrai si deux sondages sont le même (même institut, fins de terrain à 3 jours près). */
 function wikiMemeSondage(a, b) {
   if (wikiInstitut(a.inst) !== wikiInstitut(b.inst)) return false;
+  // deux sondages du même institut à quelques jours d'écart (pour deux médias) : échantillons différents
+  var na = +a.n || 0, nb = +b.n || 0;
+  if (na && nb && na !== nb) return false;
   var ta = Date.parse(a.d + "T12:00:00Z"), tb = Date.parse(b.d + "T12:00:00Z");
   return Math.abs(ta - tb) <= 3 * 864e5;
 }

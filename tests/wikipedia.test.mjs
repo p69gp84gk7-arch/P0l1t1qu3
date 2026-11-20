@@ -63,3 +63,48 @@ test("taille d'échantillon : {{formatnum:…}} et {{Formatnum|…}}", () => {
   assert.equal(ctx.wikiNombre("{{formatnum:2101}}"), 2101);
   assert.equal(ctx.wikiNombre("{{Formatnum|1164}}"), 1164);
 });
+
+test("en-tête avec photo, nom et parti dans la même case (présentation de novembre 2026)", () => {
+  const wiki = `== Sondages concernant le premier tour ==
+=== Année 2026 ===
+===== Octobre-décembre 2026 =====
+{| class="wikitable sticky-header"
+! rowspan=2 | Sondeur
+! rowspan=2 | Date
+! rowspan=2 | Échantillon
+! [[Fichier:Jean Luc Mélenchon (cropped).jpg|50x50px]]<br>[[Jean-Luc Mélenchon|Mélenchon]]<br><small>([[La France insoumise|LFI]])</small>
+! [[Fichier:Roussel_Fabien_1.jpg|alt=Fabien Roussel|50x50px]]<br>[[Fabien Roussel|Roussel]]<br><small>([[Parti communiste français|PCF]])</small>
+! [[Fichier:Marine Le Pen 2025 (cropped).jpg|alt=Marine Le pen|50x50px]]<br>[[Marine Le Pen|Le Pen]]<br><small>([[Rassemblement national|RN]])</small>
+! Autres
+|- style="line-height:5px;"
+| {{Infobox Parti politique français/couleurs|LFI}} |
+| {{Infobox Parti politique français/couleurs|PCF}} |
+| {{Infobox Parti politique français/couleurs|RN}} |
+| {{Infobox Parti politique français/couleurs|DIV}} |
+|-
+| rowspan="2" style="{{Sondeur|YouGov}}" | [http://exemple.fr/yougov.pdf YouGov]
+| rowspan="2" |12-17 novembre
+| rowspan="2" |{{formatnum:952}}
+| '''{{blanc|19}}'''
+|2
+| '''{{blanc|32}}'''
+|3<br><small>'''[[Teddy Riner|Riner]]'''</small>
+|-
+|19
+|3
+|34
+|—
+|}`;
+  const P = ctx.wikiSondagesPremierTour(wiki, { candidats: [...candidats, { cle: "riner", nom: "Riner" }], depuis: "2026-01-01" });
+  assert.equal(P.length, 1);
+  assert.deepEqual({ ...P[0].s }, { melenchon: 19, roussel: 2, rn: 32, riner: 3 });
+  assert.equal(P[0].n, 952);
+  assert.deepEqual([...P[0].inconnus], []);
+  assert.equal(ctx.wikiNomValide("alt=Fabien Roussel|50x50px"), false);
+  assert.equal(ctx.wikiNomValide("Lagarde"), true);
+});
+
+test("même institut à deux jours d'écart, échantillons différents : deux sondages", () => {
+  assert.equal(ctx.wikiMemeSondage({ inst: "OpinionWay", d: "2026-11-12", n: 964 }, { inst: "OpinionWay", d: "2026-11-10", n: 982 }), false);
+  assert.equal(ctx.wikiMemeSondage({ inst: "OpinionWay", d: "2026-11-12", n: 964 }, { inst: "OpinionWay", d: "2026-11-11", n: null }), true);
+});
