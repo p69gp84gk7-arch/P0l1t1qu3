@@ -80,10 +80,20 @@ test("candidats, élections et résultats", () => {
   }
 });
 
+// Popularité : chaque valeur de la page d'origine se retrouve au même mois et pour le même institut (les mois et
+// mesures publiés depuis, comme novembre 2026, s'y ajoutent).
+function memesValeurs([nomA, a], [nomB, b], quoi) {
+  assert.equal(nomA, nomB, quoi);
+  for (const m of b.months) assert.ok(a.months.includes(m), `${quoi} : mois ${m}`);
+  for (const [inst, vals] of Object.entries(b.series)) {
+    vals.forEach((v, i) => { if (v != null) assert.equal(a.series[inst][a.months.indexOf(b.months[i])], v, `${quoi} ${inst} ${b.months[i]}`); });
+  }
+}
+
 test("popularité, âges, Assemblée, audiences", () => {
   for (const y of ["2017", "2022", "2027"]) {
-    assert.deepEqual(plain(M.RAW.pop[y].pres), plain(ORIG.RAW.pop[y].pres));
-    assert.deepEqual(plain(M.RAW.pop[y].pm), plain(ORIG.RAW.pop[y].pm));
+    memesValeurs(plain(M.RAW.pop[y].pres), plain(ORIG.RAW.pop[y].pres), `président ${y}`);
+    plain(ORIG.RAW.pop[y].pm).forEach((pm, i) => memesValeurs(plain(M.RAW.pop[y].pm[i]), pm, `Premier ministre ${y}`));
     const { votants, ...age } = plain(M.AGE[y]);
     const orig = plain(ORIG.AGE[y]);
     // abstention 2022 corrigée d'après le rapport Ipsos-Sopra Steria (35-49 ans : 23 %, 70 ans et plus : 24 %)
@@ -91,10 +101,12 @@ test("popularité, âges, Assemblée, audiences", () => {
     assert.deepEqual(age, orig);
   }
   const cand = Object.fromEntries(Object.entries(ORIG.RAW.pop["2027"].cand).map(([k, o]) => [k, Object.fromEntries(Object.entries(o).map(([m, v]) => ["2026-" + m, v]))]));
-  assert.deepEqual(plain(M.RAW.pop["2027"].cand), cand);
+  for (const [k, o] of Object.entries(cand)) for (const [m, v] of Object.entries(o)) assert.equal(M.RAW.pop["2027"].cand[k][m], v, `${k} ${m}`);
+  assert.equal(M.RAW.pop["2027"].pres[1].months.at(-1) >= "2026-11", true, "popularité de novembre 2026");
   assert.deepEqual(plain(M.POPAGE), plain(ORIG.POPAGE));
-  assert.deepEqual(plain(M.POPN), plain(ORIG.POPN));
-  assert.deepEqual(plain(M.AN), plain(ORIG.AN));
+  for (const [k, n] of Object.entries(plain(ORIG.POPN))) assert.equal(M.POPN[k], n, k);
+  for (const k of Object.keys(ORIG.AN)) assert.deepEqual(plain(M.AN[k]), plain(ORIG.AN[k]), k);
+  assert.ok(M.AN["2026-11"], "composition de novembre 2026");
   assert.deepEqual(plain(M.TVAGE), plain(ORIG.TVAGE));
   assert.deepEqual(plain(M.MTYPE), plain(ORIG.MTYPE));
   assert.deepEqual(plain(M.MOWN), plain(ORIG.MOWN));

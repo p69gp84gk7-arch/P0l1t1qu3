@@ -27,7 +27,9 @@ const today = new Date().toISOString().slice(0, 10);
 /* ---- 1er tour ---- */
 const candidats = objets("candidats").filter((c) => c.election === "2027").map((c) => ({ cle: c.cle, nom: c.nom, alias: c.alias_wikipedia }));
 const sondages = ctx.wikiSondagesPremierTour(wikicode, { candidats, depuis: param("sondages_2027_depuis") || "2026-01-01" });
-const existants = objets("sondages_2027").map((r) => ({ inst: r.institut, d: r.fin_terrain, n: r.echantillon }));
+const clesCandidats = candidats.map((c) => c.cle);
+const existants = objets("sondages_2027").map((r) => ({ inst: r.institut, d: r.fin_terrain, n: r.echantillon,
+  s: Object.fromEntries(clesCandidats.filter((k) => r[k] != null && r[k] !== "").map((k) => [k, r[k]])) }));
 const nouveaux = sondages.filter((p) => !existants.some((e) => ctx.wikiMemeSondage(p, e)));
 const S = O.sondages_2027, entete = S[0];
 for (const p of nouveaux) {

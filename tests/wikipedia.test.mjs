@@ -105,6 +105,10 @@ test("en-tête avec photo, nom et parti dans la même case (présentation de nov
 });
 
 test("même institut à deux jours d'écart, échantillons différents : deux sondages", () => {
-  assert.equal(ctx.wikiMemeSondage({ inst: "OpinionWay", d: "2026-11-12", n: 964 }, { inst: "OpinionWay", d: "2026-11-10", n: 982 }), false);
+  const s1 = { rn: 31, melenchon: 16 }, s2 = { rn: 34, melenchon: 17 };
+  assert.equal(ctx.wikiMemeSondage({ inst: "OpinionWay", d: "2026-11-12", n: 964, s: s1 }, { inst: "OpinionWay", d: "2026-11-10", n: 982, s: s2 }), false);
+  // échantillon corrigé après coup, mêmes scores : même sondage
+  assert.equal(ctx.wikiMemeSondage({ inst: "Cluster17", d: "2026-10-22", n: 2817, s: s1 }, { inst: "Cluster17", d: "2026-10-22", n: 3000, s: { ...s1 } }), true);
+  assert.equal(ctx.wikiInstitut("OpinonWay"), "OpinionWay");
   assert.equal(ctx.wikiMemeSondage({ inst: "OpinionWay", d: "2026-11-12", n: 964 }, { inst: "OpinionWay", d: "2026-11-11", n: null }), true);
 });
