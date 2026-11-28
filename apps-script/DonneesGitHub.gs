@@ -31,7 +31,7 @@ function donneesGitHubMiseAJour(force) {
   var branche = String(parametre("script_branche") || "main"), faits = [], erreurs = [];
   FICHIERS_GITHUB.forEach(function (chemin) {
     try {
-      var url = "https://raw.githubusercontent.com/" + DEPOT_SCRIPT + "/" + branche + "/" + chemin + "?t=" + Date.now();
+      var url = "https://raw.githubusercontent.com/" + DEPOT_GITHUB + "/" + branche + "/" + chemin + "?t=" + Date.now();
       var rep = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
       if (rep.getResponseCode() === 404) return; // pas encore publié sur cette branche
       if (rep.getResponseCode() !== 200) throw new Error("GitHub a répondu " + rep.getResponseCode());

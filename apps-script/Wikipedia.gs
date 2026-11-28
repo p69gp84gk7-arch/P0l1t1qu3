@@ -13,7 +13,7 @@ var WIKI_MOIS = {
 
 /** Nom d'institut tel qu'écrit sur Wikipédia -> nom utilisé dans le Google Sheet. */
 var WIKI_INSTITUTS = [
-  [/harris|toluna/i, "Harris"], [/opinion\s*way/i, "OpinionWay"], [/ifop/i, "Ifop"],
+  [/harris|toluna/i, "Harris"], [/opini?on\s*way/i, "OpinionWay"], [/ifop/i, "Ifop"],
   [/elabe/i, "Elabe"], [/ipsos/i, "Ipsos"], [/odoxa/i, "Odoxa"], [/cluster\s*17/i, "Cluster17"],
   [/you\s*gov/i, "YouGov"], [/verian|kantar/i, "Verian"], [/\bcsa\b/i, "CSA"], [/\bbva\b/i, "Ipsos"]
 ];
@@ -291,9 +291,14 @@ function wikiSondagesSecondTour(wikicode, reference) {
 /** Vrai si deux sondages sont le même (même institut, fins de terrain à 3 jours près). */
 function wikiMemeSondage(a, b) {
   if (wikiInstitut(a.inst) !== wikiInstitut(b.inst)) return false;
-  // deux sondages du même institut à quelques jours d'écart (pour deux médias) : échantillons différents
-  var na = +a.n || 0, nb = +b.n || 0;
-  if (na && nb && na !== nb) return false;
   var ta = Date.parse(a.d + "T12:00:00Z"), tb = Date.parse(b.d + "T12:00:00Z");
-  return Math.abs(ta - tb) <= 3 * 864e5;
+  if (Math.abs(ta - tb) > 3 * 864e5) return false;
+  // même institut à quelques jours d'écart : deux sondages distincts (pour deux médias) seulement si l'échantillon
+  // ET les scores diffèrent ; un échantillon corrigé après coup sur Wikipédia reste le même sondage
+  var na = +a.n || 0, nb = +b.n || 0;
+  if (na && nb && na !== nb && a.s && b.s) {
+    var communs = Object.keys(a.s).filter(function (k) { return a.s[k] != null && b.s[k] != null && b.s[k] !== ""; });
+    if (communs.length >= 2 && communs.some(function (k) { return +a.s[k] !== +b.s[k]; })) return false;
+  }
+  return true;
 }

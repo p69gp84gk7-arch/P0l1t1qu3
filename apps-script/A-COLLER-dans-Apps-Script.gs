@@ -18,6 +18,8 @@
 // Inutile si le script est créé depuis le classeur (Extensions > Apps Script).
 var ID_CLASSEUR = "1eobPJfulibdFjZgAsjSOJRuLU1cHX7nXv119nVJF0Ak";
 
+// Dépôt GitHub de l'application (code du script et données quotidiennes).
+var DEPOT_GITHUB = "p69gp84gk7-arch/P0l1t1qu3";
 var WIKI_PAGE_DEFAUT = "Liste de sondages sur l'élection présidentielle française de 2027";
 var ONGLETS_PRIVES = ["LISEZ-MOI"];
 var CACHE_CLE = "api-v1", CACHE_DUREE = 600, CACHE_MORCEAU = 90000;
@@ -69,7 +71,11 @@ function majDepuisApplication() {
   } else {
     cache.put("maj-application", "1", 120);
     res = miseAJour();
-    if (typeof donneesGitHubMiseAJour === "function") donneesGitHubMiseAJour(false);
+    try {
+      var donnees = typeof donneesGitHubMiseAJour === "function" ? donneesGitHubMiseAJour
+        : fonctionGitHub(["apps-script/DonneesGitHub.gs"], "donneesGitHubMiseAJour");
+      if (donnees) donnees(false);
+    } catch (err) { journal("erreur données GitHub", String(err && err.message || err)); }
   }
   res.date = Utilities.formatDate(new Date(), classeur().getSpreadsheetTimeZone(), "yyyy-MM-dd HH:mm");
   return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
@@ -145,10 +151,48 @@ function miseAJourManuelle() {
 
 /** Appelée par le déclencheur. Ne fait rien si le paramètre maj_auto vaut « non ». */
 function miseAJourAuto() {
+  signalerScriptIncomplet();
   if (String(parametre("maj_auto") || "oui").toLowerCase() !== "non") miseAJour();
-  // Patrimoine.gs peut manquer pendant la nuit qui suit son ajout (il arrive à la mise à jour suivante du script).
-  if (typeof patrimoineMiseAJourAuto === "function") patrimoineMiseAJourAuto();
-  if (typeof donneesGitHubMiseAJour === "function") donneesGitHubMiseAJour(false);
+  try {
+    var patrimoine = typeof patrimoineMiseAJourAuto === "function" ? patrimoineMiseAJourAuto
+      : fonctionGitHub(["apps-script/Wikipedia.gs", "apps-script/Patrimoine.gs"], "patrimoineMiseAJourAuto");
+    if (patrimoine) patrimoine();
+  } catch (err) { journal("erreur patrimoine", String(err && err.message || err)); }
+  try {
+    var donnees = typeof donneesGitHubMiseAJour === "function" ? donneesGitHubMiseAJour
+      : fonctionGitHub(["apps-script/DonneesGitHub.gs"], "donneesGitHubMiseAJour");
+    if (donnees) donnees(false);
+  } catch (err) { journal("erreur données GitHub", String(err && err.message || err)); }
+}
+
+/* ============================== Parties chargées depuis GitHub ============================== */
+
+/** Texte d'un fichier du dépôt GitHub (branche du paramètre script_branche), ou null. */
+function codeGitHub(chemin) {
+  var branche = String(parametre("script_branche") || "main");
+  var rep = UrlFetchApp.fetch("https://raw.githubusercontent.com/" + DEPOT_GITHUB + "/" + branche + "/" + chemin + "?t=" + Date.now(), { muteHttpExceptions: true });
+  return rep.getResponseCode() === 200 ? rep.getContentText("UTF-8") : null;
+}
+
+/**
+ * Fonction définie dans des fichiers du dépôt (évalués ensemble), pour le cas où le script installé ne contient que
+ * Code.gs : le reste est lu sur GitHub au lieu de manquer. Renvoie null si GitHub est inaccessible.
+ */
+function fonctionGitHub(chemins, nom) {
+  var code = chemins.map(codeGitHub);
+  if (code.some(function (c) { return !c; })) return null;
+  var f = new Function(code.join("\n") + "\n;return typeof " + nom + " === 'function' ? " + nom + " : null;")();
+  return typeof f === "function" ? f : null;
+}
+
+/** Une fois par jour, explique dans le journal comment réparer un script collé en partie. */
+function signalerScriptIncomplet() {
+  if (typeof wikiSondagesPremierTour === "function" && typeof donneesGitHubMiseAJour === "function") return;
+  var cache = CacheService.getScriptCache();
+  if (cache.get("script-incomplet")) return;
+  cache.put("script-incomplet", "1", 21600);
+  journal("script incomplet", "Le script installé ne contient que Code.gs : les autres parties sont lues sur GitHub. " +
+    "Pour un script complet, recoller le fichier apps-script/A-COLLER-dans-Apps-Script.gs EN ENTIER (pas Code.gs), puis déployer une nouvelle version.");
 }
 
 function miseAJour() {
@@ -185,21 +229,20 @@ function miseAJour() {
  * Désactivable avec le paramètre lecteur_github = non.
  */
 function lecteurWikipedia() {
-  var local = { premier: wikiSondagesPremierTour, second: wikiSondagesSecondTour, meme: wikiMemeSondage,
-    sansAccents: wikiSansAccents, cleNouvelle: wikiCleNouvelle, nomValide: typeof wikiNomValide === "function" ? wikiNomValide : function () { return true; }, source: "script" };
-  if (String(parametre("lecteur_github") || "oui").toLowerCase() === "non") return local;
+  var local = typeof wikiSondagesPremierTour === "function" ? { premier: wikiSondagesPremierTour, second: wikiSondagesSecondTour,
+    meme: wikiMemeSondage, sansAccents: wikiSansAccents, cleNouvelle: wikiCleNouvelle,
+    nomValide: typeof wikiNomValide === "function" ? wikiNomValide : function () { return true; }, source: "script" } : null;
+  if (local && String(parametre("lecteur_github") || "oui").toLowerCase() === "non") return local;
   try {
-    var branche = String(parametre("script_branche") || "main");
-    var rep = UrlFetchApp.fetch("https://raw.githubusercontent.com/" + DEPOT_SCRIPT + "/" + branche + "/apps-script/Wikipedia.gs?t=" + Date.now(), { muteHttpExceptions: true });
-    if (rep.getResponseCode() !== 200) return local;
-    var w = new Function(rep.getContentText("UTF-8") + "\n;return { premier: wikiSondagesPremierTour, second: wikiSondagesSecondTour, meme: wikiMemeSondage," +
-      " sansAccents: wikiSansAccents, cleNouvelle: wikiCleNouvelle, nomValide: typeof wikiNomValide === 'function' ? wikiNomValide : function () { return true; } };")();
-    if (typeof w.premier !== "function" || typeof w.second !== "function") return local;
-    w.source = "GitHub";
-    return w;
-  } catch (err) {
-    return local;
-  }
+    var code = codeGitHub("apps-script/Wikipedia.gs");
+    if (code) {
+      var w = new Function(code + "\n;return { premier: wikiSondagesPremierTour, second: wikiSondagesSecondTour, meme: wikiMemeSondage," +
+        " sansAccents: wikiSansAccents, cleNouvelle: wikiCleNouvelle, nomValide: typeof wikiNomValide === 'function' ? wikiNomValide : function () { return true; } };")();
+      if (typeof w.premier === "function" && typeof w.second === "function") { w.source = "GitHub"; return w; }
+    }
+  } catch (err) { /* on garde la version installée */ }
+  if (local) return local;
+  throw new Error("lecteur Wikipédia absent du script et GitHub inaccessible : recoller apps-script/A-COLLER-dans-Apps-Script.gs en entier");
 }
 
 function importerPremierTour(wikicode, W) {
@@ -209,7 +252,12 @@ function importerPremierTour(wikicode, W) {
     .map(function (c) { return { cle: c.cle, nom: c.nom, alias: c.alias_wikipedia }; });
   var depuis = String(parametre("sondages_2027_depuis") || "2026-01-01");
   var sondages = W.premier(wikicode, { candidats: candidats, depuis: depuis });
-  var existants = lignes("sondages_2027").map(function (r) { return { inst: r.institut, d: texteDate(r.fin_terrain), n: r.echantillon }; });
+  var cles = candidats.map(function (c) { return String(c.cle); });
+  var existants = lignes("sondages_2027").map(function (r) {
+    var s = {};
+    cles.forEach(function (k) { if (r[k] !== "" && r[k] != null) s[k] = r[k]; });
+    return { inst: r.institut, d: texteDate(r.fin_terrain), n: r.echantillon, s: s };
+  });
   // garde-fou : tous les sondages 2027 testent le RN ; sans lui, la lecture du tableau a échoué (présentation changée)
   var illisibles = sondages.filter(function (p) { return p.s.rn == null; });
   if (illisibles.length) journal("lecture Wikipédia", illisibles.length + " sondage(s) ignoré(s), tableau mal lu : " +
@@ -325,7 +373,7 @@ var WIKI_MOIS = {
 
 /** Nom d'institut tel qu'écrit sur Wikipédia -> nom utilisé dans le Google Sheet. */
 var WIKI_INSTITUTS = [
-  [/harris|toluna/i, "Harris"], [/opinion\s*way/i, "OpinionWay"], [/ifop/i, "Ifop"],
+  [/harris|toluna/i, "Harris"], [/opini?on\s*way/i, "OpinionWay"], [/ifop/i, "Ifop"],
   [/elabe/i, "Elabe"], [/ipsos/i, "Ipsos"], [/odoxa/i, "Odoxa"], [/cluster\s*17/i, "Cluster17"],
   [/you\s*gov/i, "YouGov"], [/verian|kantar/i, "Verian"], [/\bcsa\b/i, "CSA"], [/\bbva\b/i, "Ipsos"]
 ];
@@ -603,11 +651,16 @@ function wikiSondagesSecondTour(wikicode, reference) {
 /** Vrai si deux sondages sont le même (même institut, fins de terrain à 3 jours près). */
 function wikiMemeSondage(a, b) {
   if (wikiInstitut(a.inst) !== wikiInstitut(b.inst)) return false;
-  // deux sondages du même institut à quelques jours d'écart (pour deux médias) : échantillons différents
-  var na = +a.n || 0, nb = +b.n || 0;
-  if (na && nb && na !== nb) return false;
   var ta = Date.parse(a.d + "T12:00:00Z"), tb = Date.parse(b.d + "T12:00:00Z");
-  return Math.abs(ta - tb) <= 3 * 864e5;
+  if (Math.abs(ta - tb) > 3 * 864e5) return false;
+  // même institut à quelques jours d'écart : deux sondages distincts (pour deux médias) seulement si l'échantillon
+  // ET les scores diffèrent ; un échantillon corrigé après coup sur Wikipédia reste le même sondage
+  var na = +a.n || 0, nb = +b.n || 0;
+  if (na && nb && na !== nb && a.s && b.s) {
+    var communs = Object.keys(a.s).filter(function (k) { return a.s[k] != null && b.s[k] != null && b.s[k] !== ""; });
+    if (communs.length >= 2 && communs.some(function (k) { return +a.s[k] !== +b.s[k]; })) return false;
+  }
+  return true;
 }
 
 /**
@@ -946,7 +999,7 @@ function donneesGitHubMiseAJour(force) {
   var branche = String(parametre("script_branche") || "main"), faits = [], erreurs = [];
   FICHIERS_GITHUB.forEach(function (chemin) {
     try {
-      var url = "https://raw.githubusercontent.com/" + DEPOT_SCRIPT + "/" + branche + "/" + chemin + "?t=" + Date.now();
+      var url = "https://raw.githubusercontent.com/" + DEPOT_GITHUB + "/" + branche + "/" + chemin + "?t=" + Date.now();
       var rep = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
       if (rep.getResponseCode() === 404) return; // pas encore publié sur cette branche
       if (rep.getResponseCode() !== 200) throw new Error("GitHub a répondu " + rep.getResponseCode());
